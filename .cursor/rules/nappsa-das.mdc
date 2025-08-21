@@ -1,0 +1,156 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+Veritabanı Mimarisi ve Proje Kuralları
+1. Genel Felsefe ve Temel Prensipler
+Bu projenin veritabanı, üç ana prensip üzerine kurulmuştur: Veri Bütünlüğü, Ölçeklenebilirlik ve Lokalizasyon (Çoklu Dil Desteği). Bu döküman, bu prensiplerin nasıl uygulandığını ve projede çalışırken uyulması gereken kuralları açıklar.
+
+1.1. İlişkisel ve Normalize Veri Yapısı
+Tüm veriler, PostgreSQL'in ilişkisel gücünden faydalanacak şekilde normalize edilmiştir. Bu, aşağıdaki avantajları sağlar:
+
+Veri Tekrarını Önleme: Bir bilgi (örneğin bir malzeme adı veya kategori) sadece bir kez, kendi tablosunda tanımlanır.
+
+Veri Tutarlılığı: Bir bilgi güncellendiğinde, bu değişikliğin o bilgiyi kullanan her yere yansıması garantilenir.
+
+Performans ve Esneklik: JOIN işlemleri ile istenen veri setleri verimli bir şekilde oluşturulabilir.
+
+Kural: Herhangi bir veriyi büyük bir JSONB sütununa gömmek yerine, onu mantıksal olarak ait olduğu tabloya ayırmak tercih edilmelidir.
+
+1.2. Lokalizasyon Deseni: Ana Tablo + Çeviri Tablosu
+Projedeki en temel kural, çoklu dil desteği gerektiren tüm verilerin "Ana Tablo + Çeviri Tablosu" deseni ile yönetilmesidir.
+
+Ana Tablo (movies, food_recipes, food_tags vb.): Dile bağlı olmayan, evrensel ve yapısal verileri içerir. (ID, tarihler, resim URL'leri, yabancı anahtarlar vb.)
+
+Çeviri Tablosu (..._translations): Dile bağlı olarak değişen metinleri içerir. (Başlık, açıklama, isim vb.) Bu tablolarda her zaman language_code sütunu bulunur.
+
+Kural: Uygulamada kullanıcıya gösterilen ve çevrilme potansiyeli olan her metin, mutlaka bir _translations tablosunda tutulmalıdır. Ana tablolara asla çevrilebilir metin eklenmemelidir.
+
+1.3. İsimlendirme Kuralları
+Tüm tablo isimleri çoğul ve İngilizce'dir (movies, recipes, categories).
+
+Yemek tarifi modülüne ait tüm tablolar food_ öneki alır.
+
+Sütun isimleri snake_case formatındadır (created_at, image_url).
+
+2. Şema Detayları
+2.1. Film Veritabanı Şeması
+movies: Filmlerin dile bağlı olmayan ana bilgilerini (yıl, süre, puan, poster URL'si vb.) tutar.
+
+movie_translations: Filmlerin farklı dillerdeki başlık ve açıklamalarını tutar. movies tablosu ile movie_id üzerinden ilişkilidir.
+
+2.2. Yemek Tarifi Veritabanı Şeması
+Bu şema, filmlere göre daha fazla ilişkisel tablo içerir ancak aynı temel prensipleri takip eder.
+
+food_recipes: Tariflerin ana, dile bağlı olmayan verilerini (pişirme süresi, porsiyon, zorluk, resim URL'si vb.) tutar.
+
+food_recipe_translations: Bir tarifin farklı dillerdeki başlığını, açıklamasını ve tarif adımlarını (instructions dizisi) tutar.
+
+food_ingredients: Tüm malzemelerin ana listesidir. Bir malzemenin adı (name) burada tanımlanmaz, çünkü çevrilebilir.
+
+food_ingredient_translations: Malzemelerin farklı dillerdeki isimlerini ve açıklamalarını tutar.
+
+food_categories, food_cuisines, food_tags: Bunlar "lookup" (referans) tablolarıdır. Sabit, dilden bağımsız bir slug içerirler.
+
+food_category_translations, food_cuisine_translations, food_tag_translations: Yukarıdaki referans tablolarının farklı dillerdeki isimlerini tutarlar.
+
+food_recipe_ingredients: Hangi tarifte hangi malzemeden ne kadar (quantity) kullanıldığını belirten bağlantı (junction) tablosudur.
+
+food_recipe_categories, food_recipe_tags: Hangi tarifin hangi kategoriye veya etikete sahip olduğunu belirten bağlantı (junction) tablolarıdır. Bu tablolar "çoktan-çoka" ilişkileri yönetir.
+
+3. Kullanım Kuralları ve En İyi Pratikler
+Kural 1: Karmaşık Yazma İşlemleri İçin RPC Fonksiyonları Kullanılmalıdır
+Birden fazla tabloyu etkileyen CREATE veya UPDATE işlemleri için mutlaka Supabase RPC (Veritabanı Fonksiyonu) kullanılmalıdır.
+
+Neden?
+
+Atomik İşlemler (Transaction): RPC, tüm veritabanı işlemlerini tek bir pakette çalıştırır. Eğer işlemlerden biri başarısız olursa, tümü geri alınır. Bu, veritabanında yarım kalmış veya tutarsız veri olmasını engeller. (create_full_recipe fonksiyonu buna en iyi örnektir).
+
+Basit İstemci Kodu: Karmaşık SQL mantığı sunucuda (Supabase) saklanır. İstemci (React/Vite app), sadece tek bir fonksiyonu, basit bir JSON objesi ile çağırır.
+
+Güvenlik: Veritabanı yapısının detayları istemciden gizlenir.
+
+Örnek: Yeni bir tarif eklemek için 5-6 farklı tabloya INSERT yapmak yerine, istemci sadece create_full_recipe fonksiyonunu çağırır.
+
+JavaScript
+
+// DO THIS (İstemcide YAPILMASI GEREKEN)
+const { error } = await supabase.rpc('create_full_recipe', { p_recipe_payload: recipeData });
+
+// DON'T DO THIS (İstemcide YAPILMAMASI GEREKEN)
+// await supabase.from('food_recipes').insert(...);
+// await supabase.from('food_recipe_translations').insert(...);
+// await supabase.from('food_recipe_ingredients').insert(...);
+// ...
+Kural 2: Çevrilmiş Veriyi Çekerken JOIN veya RPC Kullanılmalıdır
+Kullanıcıya bir tarifi veya filmi gösterirken, hem ana tablodan hem de çeviri tablosundan veri çekmek gerekir.
+
+Tercih Edilen Yöntem (RPC): get_all_tags_with_translations gibi RPC fonksiyonları, JOIN işlemini sunucuda yaparak istemciye temiz ve hazır bir JSON döndürür. Bu, istemci kodunu basitleştirir.
+
+Alternatif Yöntem (İstemci JOIN): Supabase'in JavaScript istemcisi ile de JOIN sorguları yapılabilir. Bu, RPC oluşturmak istemediğiniz basit okuma işlemleri için uygundur.
+
+Örnek (İstemci JOIN):
+
+JavaScript
+
+const { data, error } = await supabase
+  .from('food_recipes')
+  .select(`
+    id,
+    image_url,
+    cuisine:food_cuisines (
+        slug,
+        translations:food_cuisine_translations (name)
+    ),
+    translations:food_recipe_translations (
+        title,
+        description,
+        instructions
+    )
+  `)
+  .eq('translations.language_code', 'tr') // Sadece Türkçe çevirileri getir
+  .eq('id', 123) // Belirli bir tarifi getir
+  .single();
+Kural 3: Yeni Statik Veri Ekleme
+Uygulamaya "Pişirme Metotları" veya "Diyet Türleri" gibi yeni bir filtrelenebilir özellik ekleneceği zaman, mutlaka food_tags ve food_categories tablolarının yapısı örnek alınmalıdır:
+
+Ana, sabit tablo (food_cooking_methods).
+
+Çeviri tablosu (food_cooking_method_translations).
+
+Tariflerle bağlantı kuracak tablo (food_recipe_cooking_methods).
+
+Kural 4: Gelecekteki Geliştirmeler ve Mevcut Yapıyı Genişletme
+Bu proje büyüdükçe, mevcut şemayı genişletmek veya yeni özellikler eklemek kaçınılmaz olacaktır. Projenin tutarlılığını ve kalitesini korumak için aşağıdaki adımlar zorunludur:
+
+a) Mevcut Bir Tabloya Yeni Bir Alan Ekleme:
+Öncelikle kendinize şu soruyu sorun: "Bu alan dile göre değişebilir mi?"
+
+Cevap EVET ise (Çevrilebilir bir alan): Yeni sütun, ana tabloya DEĞİL, _translations tablosuna eklenmelidir.
+
+YANLIŞ: ALTER TABLE food_recipes ADD COLUMN summary TEXT;
+
+DOĞRU: ALTER TABLE food_recipe_translations ADD COLUMN summary TEXT;
+
+Cevap HAYIR ise (Çevrilmeyen, sabit bir alan): Yeni sütun ana tabloya eklenmelidir.
+
+ÖRNEK: Tarife bir YouTube video linki eklemek istiyoruz. URL sabittir ve çevrilmez.
+
+DOĞRU: ALTER TABLE food_recipes ADD COLUMN video_url TEXT;
+
+b) Sisteme Yeni Bir "Varlık" (Entity) Ekleme:
+Uygulamaya "Şefler", "Restoranlar" veya "Yemek Kitapları" gibi tamamen yeni bir konsept eklerken, bu dökümanda belirtilen temel prensipler sıfırdan uygulanmalıdır:
+
+Veriyi Ayrıştır: Yeni varlığın hangi bilgilerinin sabit, hangilerinin çevrilebilir olduğunu belirle.
+
+Tabloları Oluştur: Ana tabloyu (chefs) ve çeviri tablosunu (chef_translations) oluştur.
+
+İlişkileri Kur: Yeni tabloları mevcut şemayla (food_recipes tablosuna chef_id eklemek gibi) foreign keyler ile bağla.
+
+RPC'leri Yaz: Yeni şef ekleme gibi karmaşık işlemler için create_chef_with_details gibi yeni RPC fonksiyonları oluştur.
+
+Kural 5: Oluşturulan her sayfa ya da büyük component parçalardan oluşmalı gerekli her durumda yeni bir component, utils, hook, context, api vb. oluşturulmalı.
+
+Kural 6: ui componentleri shacdn den kullan
