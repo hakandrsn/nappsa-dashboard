@@ -471,8 +471,8 @@ export function validateBulkRecipeData(data: any, index: number): {
     warnings.push(`Tarif ${index}: servings number olmalıdır`)
   }
 
-  if (data.difficulty && !['Kolay', 'Orta', 'Zor'].includes(data.difficulty)) {
-    warnings.push(`Tarif ${index}: difficulty "Kolay", "Orta" veya "Zor" olmalıdır`)
+  if (data.difficulty && !['Easy', 'Medium', 'Hard'].includes(data.difficulty)) {
+    warnings.push(`Tarif ${index}: difficulty "Easy", "Medium" veya "Hard" olmalıdır`)
   }
 
   if (data.cuisine && typeof data.cuisine !== 'string') {
@@ -567,6 +567,11 @@ export function cleanBulkRecipeData(data: any, languageCode: string): {
     description: string;
     instructions: string[];
   }>;
+  // Junction table data
+  categories?: string[];
+  cuisines?: string[];
+  tags?: string[];
+  ingredients?: Array<{ name: string; quantity: string; unit: string }>;
 } {
   // Ana recipe verisi (translations olmadan)
   const recipeData: any = {
@@ -574,7 +579,7 @@ export function cleanBulkRecipeData(data: any, languageCode: string): {
     prep_time_minutes: data.prep_time_minutes || undefined,
     cook_time_minutes: data.cook_time_minutes || undefined,
     servings: data.servings || undefined,
-    difficulty: (data.difficulty as RecipeDifficulty) || 'Orta',
+    difficulty: (data.difficulty as RecipeDifficulty) || 'Medium',
     cuisine_id: undefined // TODO: cuisine slug'dan ID bul
   }
 
@@ -619,7 +624,38 @@ export function cleanBulkRecipeData(data: any, languageCode: string): {
 
   return {
     ...recipeData,
-    translations
+    translations,
+    // Junction table data
+    categories: data.categories || [],
+    cuisines: data.cuisines || [],
+    tags: data.tags || [],
+    ingredients: data.ingredients || []
+  }
+}
+
+// Junction table data oluştur
+export function createJunctionTableData(
+  recipeId: number,
+  categories: string[],
+  cuisines: string[],
+  tags: string[],
+  ingredients: Array<{ name: string; quantity: string; unit: string }>
+): {
+  recipeCategories: Array<{ recipe_id: number; category_id: number }>;
+  recipeCuisines: Array<{ recipe_id: number; cuisine_id: number }>;
+  recipeTags: Array<{ recipe_id: number; tag_id: number }>;
+  recipeIngredients: Array<{ recipe_id: number; ingredient_id: number; quantity: string; unit: string }>;
+} {
+  return {
+    recipeCategories: categories.map(category => ({ recipe_id: recipeId, category_id: 0 })), // TODO: category_id bul
+    recipeCuisines: cuisines.map(cuisine => ({ recipe_id: recipeId, cuisine_id: 0 })), // TODO: cuisine_id bul
+    recipeTags: tags.map(tag => ({ recipe_id: recipeId, tag_id: 0 })), // TODO: tag_id bul
+    recipeIngredients: ingredients.map(ingredient => ({ 
+      recipe_id: recipeId, 
+      ingredient_id: 0, // TODO: ingredient_id bul
+      quantity: ingredient.quantity, 
+      unit: ingredient.unit 
+    }))
   }
 }
 

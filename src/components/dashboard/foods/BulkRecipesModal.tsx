@@ -23,7 +23,7 @@ interface BulkRecipeData {
   prep_time_minutes?: number
   cook_time_minutes?: number
   servings?: number
-  difficulty?: 'Kolay' | 'Orta' | 'Zor'
+  difficulty?: 'Easy' | 'Medium' | 'Hard'
   cuisine?: string // slug
   categories?: string[] // slug array
   tags?: string[] // slug array
@@ -43,7 +43,18 @@ interface ValidationResult {
 
 export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
   const { currentLanguage, setLanguage, availableLanguages } = useLanguage()
-  const { createRecipe } = useFoodsApi()
+  const { 
+    createRecipe,
+    findCategoryIdByName,
+    createRecipeCategory,
+    findCuisineIdByName,
+    createRecipeCuisine,
+    findTagIdByName,
+    createRecipeTag,
+    findIngredientIdByName,
+    createRecipeIngredient
+  } = useFoodsApi()
+  const [activeTab, setActiveTab] = useState('input')
   const [inputData, setInputData] = useState<string>('')
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -59,6 +70,8 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
         warnings: [],
         data: []
       })
+      // Hata varsa input tabında kal
+      setActiveTab('input')
       return
     }
 
@@ -74,6 +87,8 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
           warnings: [],
           data: []
         })
+        // Hata varsa input tabında kal
+        setActiveTab('input')
         return
       }
 
@@ -139,6 +154,15 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
         data: allData
       })
 
+      // Doğrulama sonucuna göre tab değiştir
+      if (isValid) {
+        // Başarılı ise doğrulama tabına geç
+        setActiveTab('validation')
+      } else {
+        // Hata varsa input tabında kal, hataları göster
+        setActiveTab('input')
+      }
+
     } catch (error) {
       setValidationResult({
         isValid: false,
@@ -146,6 +170,8 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
         warnings: [],
         data: []
       })
+      // Parse hatası varsa input tabında kal
+      setActiveTab('input')
     }
   }, [inputData])
 
@@ -157,6 +183,9 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
     setProcessingProgress({ current: 0, total: validationResult.data.length })
     setResults([])
 
+    // İşleme tabına geç
+    setActiveTab('processing')
+
     const newResults: Array<{ success: boolean; message: string; data?: any }> = []
 
     for (let i = 0; i < validationResult.data.length; i++) {
@@ -167,22 +196,93 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
         const cleanedData = cleanBulkRecipeData(recipeData, currentLanguage)
         
         // Ana recipe verisini ve çevirileri ayır
-        const { translations, ...recipeDataWithoutTranslations } = cleanedData
+        const { translations, categories, cuisines, tags, ingredients, ...recipeDataWithoutTranslations } = cleanedData
         
         // difficulty alanını RecipeDifficulty tipine cast et
         const typedRecipeData = {
           ...recipeDataWithoutTranslations,
-          difficulty: recipeDataWithoutTranslations.difficulty as 'Kolay' | 'Orta' | 'Zor'
+          difficulty: recipeDataWithoutTranslations.difficulty as 'Easy' | 'Medium' | 'Hard'
         }
         
         // Recipe oluştur
         const result = await createRecipe(typedRecipeData, translations)
         
-        newResults.push({
-          success: true,
-          message: `"${recipeData.title}" başarıyla eklendi (${currentLanguage})`,
-          data: result
-        })
+        console.log('createRecipe result:', result)
+        console.log('Recipe data:', typedRecipeData)
+        console.log('Translations:', translations)
+        
+        if (result && result.id) {
+          const recipeId = result.id
+          console.log('Recipe ID found:', recipeId)
+          let junctionResults = []
+          
+          // Kategorileri ekle
+          if (categories && categories.length > 0) {
+            try {
+              for (const categoryName of categories) {
+                // Kategori adından ID bul
+                const categoryId = await findCategoryIdByName(categoryName)
+                if (categoryId) {
+                  await createRecipeCategory(recipeId, categoryId)
+                  junctionResults.push(`Kategori: ${categoryName}`)
+                }
+              }
+            } catch (error) {
+              console.warn(`Kategoriler eklenirken hata:`, error)
+            }
+          }
+          
+          // Mutfakları ekle
+          if (cuisines && cuisines.length > 0) {
+            try {
+              for (const cuisineName of cuisines) {
+                // Mutfak adından ID bul
+                const cuisineId = await findCuisineIdByName(cuisineName)
+                if (cuisineId) {
+                  await createRecipeCuisine(recipeId, cuisineId)
+                  junctionResults.push(`Mutfak: ${cuisineName}`)
+                }
+              }
+            } catch (error) {
+              console.warn(`Mutfaklar eklenirken hata:`, error)
+            }
+          }
+          
+                        // Etiketleri ekle (Devre dışı - sadece kategoriler kullanılıyor)
+              if (tags && tags.length > 0) {
+                console.log(`⚠️ Etiketler devre dışı: ${tags.join(', ')} - sadece kategoriler kullanılıyor`)
+                junctionResults.push(`Etiketler devre dışı: ${tags.join(', ')}`)
+              }
+          
+          // Malzemeleri ekle
+          if (ingredients && ingredients.length > 0) {
+            try {
+              for (const ingredient of ingredients) {
+                // Malzeme adından ID bul
+                const ingredientId = await findIngredientIdByName(ingredient.name)
+                if (ingredientId) {
+                  await createRecipeIngredient(recipeId, ingredientId, ingredient.quantity, ingredient.unit)
+                  junctionResults.push(`Malzeme: ${ingredient.name}`)
+                }
+              }
+            } catch (error) {
+              console.warn(`Malzemeler eklenirken hata:`, error)
+            }
+          }
+          
+          const junctionInfo = junctionResults.length > 0 ? ` (${junctionResults.join(', ')})` : ''
+          newResults.push({
+            success: true,
+            message: `"${recipeData.title}" başarıyla eklendi${junctionInfo}`,
+            data: result
+          })
+        } else {
+          newResults.push({
+            success: false,
+            message: `"${recipeData.title}" eklenirken hata: Recipe ID alınamadı`,
+            data: result
+          })
+        }
         
       } catch (error) {
         newResults.push({
@@ -201,6 +301,9 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
     }
 
     setIsProcessing(false)
+    
+    // İşlem tamamlandığında sonuçlar tabına geç
+    setActiveTab('results')
   }
 
   // Modal kapatıldığında state'i temizle
@@ -209,6 +312,7 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
     setValidationResult(null)
     setResults([])
     setProcessingProgress({ current: 0, total: 0 })
+    setActiveTab('input')
     onClose()
   }
 
@@ -251,7 +355,7 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
           </div>
         </DialogHeader>
 
-        <Tabs defaultValue="input" className="flex-1 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 overflow-hidden">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="input">📝 Veri Girişi</TabsTrigger>
             <TabsTrigger value="validation">✅ Doğrulama</TabsTrigger>
@@ -350,7 +454,7 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
                       <li>prep_time_minutes (number) - Hazırlık süresi</li>
                       <li>cook_time_minutes (number) - Pişirme süresi</li>
                       <li>servings (number) - Porsiyon sayısı</li>
-                      <li>difficulty (Kolay/Orta/Zor) - Zorluk seviyesi</li>
+                      <li>difficulty (Easy/Medium/Hard) - Zorluk seviyesi</li>
                       <li>cuisine (slug) - Mutfak türü</li>
                       <li>categories (slug array) - Kategori listesi</li>
                       <li>tags (slug array) - Etiket listesi</li>

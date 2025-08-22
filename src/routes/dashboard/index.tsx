@@ -31,9 +31,9 @@ function DashboardIndexComponent() {
   }
 
   const recentRecipes = [
-    { id: 1, title: 'Mercimek Çorbası', difficulty: 'Kolay', prepTime: 15, rating: 4.8 },
-    { id: 2, title: 'İskender Kebap', difficulty: 'Orta', prepTime: 45, rating: 4.9 },
-    { id: 3, title: 'Baklava', difficulty: 'Zor', prepTime: 120, rating: 4.7 },
+    { id: 1, title: 'Mercimek Çorbası', difficulty: 'Easy', prepTime: 15, rating: 4.8 },
+    { id: 2, title: 'İskender Kebap', difficulty: 'Medium', prepTime: 45, rating: 4.9 },
+    { id: 3, title: 'Baklava', difficulty: 'Hard', prepTime: 120, rating: 4.7 },
   ]
 
   const recentMovies = [

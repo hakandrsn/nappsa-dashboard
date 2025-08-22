@@ -35,7 +35,7 @@ export function RecipeFormModal({ isOpen, onClose, recipe, mode }: RecipeFormMod
     prep_time_minutes: undefined,
     cook_time_minutes: undefined,
     servings: undefined,
-    difficulty: 'Orta',
+    difficulty: 'Medium',
     cuisine_id: undefined
   })
   
@@ -69,7 +69,7 @@ export function RecipeFormModal({ isOpen, onClose, recipe, mode }: RecipeFormMod
         prep_time_minutes: recipe.prep_time_minutes || undefined,
         cook_time_minutes: recipe.cook_time_minutes || undefined,
         servings: recipe.servings || undefined,
-        difficulty: recipe.difficulty || 'Orta',
+        difficulty: recipe.difficulty || 'Medium',
         cuisine_id: recipe.cuisine_id || undefined
       })
       
@@ -220,7 +220,7 @@ export function RecipeFormModal({ isOpen, onClose, recipe, mode }: RecipeFormMod
       prep_time_minutes: undefined,
       cook_time_minutes: undefined,
       servings: undefined,
-      difficulty: 'Orta',
+      difficulty: 'Medium',
       cuisine_id: undefined
     })
     setSelectedCategories([])
@@ -346,16 +346,16 @@ export function RecipeFormModal({ isOpen, onClose, recipe, mode }: RecipeFormMod
                   <div className="space-y-2">
                     <Label htmlFor="difficulty">Zorluk</Label>
                     <Select
-                      value={formData.difficulty || 'Orta'}
+                      value={formData.difficulty || 'Medium'}
                       onValueChange={(value) => handleFormChange('difficulty', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Zorluk seçin" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Kolay">Kolay</SelectItem>
-                        <SelectItem value="Orta">Orta</SelectItem>
-                        <SelectItem value="Zor">Zor</SelectItem>
+                        <SelectItem value="Easy">Easy</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Hard">Hard</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

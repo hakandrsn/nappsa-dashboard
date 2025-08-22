@@ -153,6 +153,7 @@ export interface FoodRecipeIngredient {
   recipe_id: number;
   ingredient_id: number;
   quantity: string;
+  unit: string;
   notes?: string;
 }
 
@@ -172,7 +173,7 @@ export interface FoodRecipeTag {
 // ENUM TİPLERİ
 // =============================================
 
-export type RecipeDifficulty = 'Kolay' | 'Orta' | 'Zor';
+export type RecipeDifficulty = 'Easy' | 'Medium' | 'Hard';
 
 // =============================================
 // CRUD OPERASYONLARI İÇİN YARDIMCI TİPLER

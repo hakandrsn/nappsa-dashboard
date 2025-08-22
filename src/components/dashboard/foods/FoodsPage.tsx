@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RecipeFormModal } from './RecipeFormModal'
 import { BulkRecipesModal } from './BulkRecipesModal'
+import { RecipeViewModal } from './RecipeViewModal'
 import { 
   ChefHat, 
   Utensils, 
@@ -33,6 +34,9 @@ function FoodsPageContent() {
     fetchCategories, 
     fetchCuisines, 
     fetchTags,
+    fetchRecipeIngredients,
+    fetchRecipeCategories,
+    fetchRecipeCuisines,
     loading 
   } = useFoodsApi()
 
@@ -40,6 +44,10 @@ function FoodsPageContent() {
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false)
   const [editingRecipe, setEditingRecipe] = useState<FoodRecipe | null>(null)
   const [isBulkRecipesModalOpen, setIsBulkRecipesModalOpen] = useState(false)
+  
+  // Tarif görüntüleme modal state'i
+  const [isViewRecipeModalOpen, setIsViewRecipeModalOpen] = useState(false)
+  const [viewingRecipe, setViewingRecipe] = useState<FoodRecipe | null>(null)
   
   // Diğer modal state'leri
   const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false)
@@ -169,6 +177,54 @@ function FoodsPageContent() {
     }
   }
 
+  // Tarif görüntüleme handler'ı
+  const handleViewRecipe = async (recipe: FoodRecipe) => {
+    try {
+      console.log(`🔍 Tarif detayları yükleniyor: ${recipe.id}`)
+      
+      // Junction table verilerini paralel olarak çek
+      const [ingredients, categories, cuisines] = await Promise.all([
+        fetchRecipeIngredients(recipe.id),
+        fetchRecipeCategories(recipe.id),
+        fetchRecipeCuisines(recipe.id)
+      ])
+
+      console.log(`✅ Junction table verileri yüklendi:`, {
+        ingredients: ingredients.length,
+        categories: categories.length,
+        cuisines: cuisines.length
+      })
+
+      // State'e junction table verilerini ekle
+      dispatch({ 
+        type: 'SET_RECIPE_INGREDIENTS', 
+        payload: { recipeId: recipe.id, ingredients } 
+      })
+      
+      dispatch({ 
+        type: 'SET_RECIPE_CATEGORIES', 
+        payload: { recipeId: recipe.id, categories } 
+      })
+      
+      dispatch({ 
+        type: 'SET_RECIPE_CUISINES', 
+        payload: { recipeId: recipe.id, cuisines } 
+      })
+
+      setViewingRecipe(recipe)
+      setIsViewRecipeModalOpen(true)
+    } catch (error) {
+      console.error('❌ Tarif detayları yüklenirken hata:', error)
+      alert('Tarif detayları yüklenirken bir hata oluştu.')
+    }
+  }
+
+  // Tarif görüntüleme modal'ını kapat
+  const closeViewRecipeModal = () => {
+    setIsViewRecipeModalOpen(false)
+    setViewingRecipe(null)
+  }
+
   // İstatistikler
   const stats = {
     totalRecipes: state.recipesCount,
@@ -176,6 +232,106 @@ function FoodsPageContent() {
     totalCategories: state.categoriesCount,
     totalCuisines: state.cuisinesCount,
     totalTags: state.tagsCount
+  }
+
+  // Veri düzeltme fonksiyonu
+  const handleFixRecipeData = async () => {
+    console.log('Veri düzeltme başlatılıyor...')
+    try {
+      // Önce mevcut kategorileri ve mutfakları kontrol et
+      if (state.categories.length === 0 || state.cuisines.length === 0) {
+        alert('Önce kategoriler ve mutfaklar yüklenmelidir. Lütfen sayfayı yenileyin.')
+        return
+      }
+
+      // TheMealDB'den gelen kategori isimlerini bizim kategorilerimizle eşleştir
+      const categoryMapping: Record<string, number> = {}
+      state.categories.forEach(category => {
+        const translations = state.categoryTranslations[category.id] || []
+        const trName = translations.find(t => t.language_code === 'tr')?.name || ''
+        const enName = translations.find(t => t.language_code === 'en')?.name || ''
+        
+        if (trName) categoryMapping[trName.toLowerCase()] = category.id
+        if (enName) categoryMapping[enName.toLowerCase()] = category.id
+      })
+
+      // TheMealDB'den gelen mutfak isimlerini bizim mutfaklarımızla eşleştir
+      const cuisineMapping: Record<string, number> = {}
+      state.cuisines.forEach(cuisine => {
+        const translations = state.cuisineTranslations[cuisine.id] || []
+        const trName = translations.find(t => t.language_code === 'tr')?.name || ''
+        const enName = translations.find(t => t.language_code === 'en')?.name || ''
+        
+        if (trName) cuisineMapping[trName.toLowerCase()] = cuisine.id
+        if (enName) cuisineMapping[enName.toLowerCase()] = cuisine.id
+      })
+
+      console.log('Kategori mapping:', categoryMapping)
+      console.log('Mutfak mapping:', cuisineMapping)
+
+      // Eksik kategorileri ve mutfakları tespit et
+      const missingCategories: string[] = []
+      const missingCuisines: string[] = []
+
+      state.recipes.forEach(recipe => {
+        const translations = state.recipeTranslations[recipe.id] || []
+        const trTranslation = translations.find(t => t.language_code === 'tr')
+        
+        if (trTranslation?.title) {
+          // Basit bir kategori tahmini yap (ilk kelimeyi al)
+          const firstWord = trTranslation.title.split(' ')[0].toLowerCase()
+          if (!categoryMapping[firstWord] && !missingCategories.includes(firstWord)) {
+            missingCategories.push(firstWord)
+          }
+        }
+      })
+
+      // Eksik kategorileri ve mutfakları göster
+      if (missingCategories.length > 0 || missingCuisines.length > 0) {
+        let message = 'Eksik kategoriler ve mutfaklar tespit edildi:\n\n'
+        if (missingCategories.length > 0) {
+          message += `Kategoriler: ${missingCategories.join(', ')}\n`
+        }
+        if (missingCuisines.length > 0) {
+          message += `Mutfaklar: ${missingCuisines.join(', ')}\n`
+        }
+        message += '\nBu kategorileri ve mutfakları manuel olarak eklemeniz gerekiyor.'
+        
+        alert(message)
+        return
+      }
+
+      // Şimdi tarifleri düzelt
+      let fixedCount = 0
+      for (const recipe of state.recipes) {
+        const translations = state.recipeTranslations[recipe.id] || []
+        const trTranslation = translations.find(t => t.language_code === 'tr')
+        
+        if (trTranslation?.title) {
+          const firstWord = trTranslation.title.split(' ')[0].toLowerCase()
+          const categoryId = categoryMapping[firstWord]
+          
+          if (categoryId && (!state.recipeCategories[recipe.id] || state.recipeCategories[recipe.id].length === 0)) {
+            // Kategori ekle
+            dispatch({ 
+              type: 'ADD_RECIPE_CATEGORY', 
+              payload: { recipeId: recipe.id, categoryId } 
+            })
+            fixedCount++
+          }
+        }
+      }
+
+      if (fixedCount > 0) {
+        alert(`${fixedCount} adet tarifin kategorisi düzeltildi.`)
+      } else {
+        alert('Düzeltilmesi gereken tarif bulunamadı.')
+      }
+
+    } catch (error) {
+      console.error('Veri düzeltme sırasında hata:', error)
+      alert('Veri düzeltme sırasında bir hata oluştu.')
+    }
   }
 
   return (
@@ -319,9 +475,13 @@ function FoodsPageContent() {
                 <Plus className="h-4 w-4 mr-2" />
                 Tek Tarif Ekle
               </Button>
-              <Button variant="outline" size="sm">
+              <Button variant="outline" size="sm" onClick={() => setIsBulkRecipesModalOpen(true)}>
                 <Upload className="h-4 w-4 mr-2" />
                 Toplu Tarif Ekle
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleFixRecipeData}>
+                <Download className="h-4 w-4 mr-2" />
+                Veri Düzeltme
               </Button>
             </div>
           </div>
@@ -352,20 +512,20 @@ function FoodsPageContent() {
                   <CardHeader className="p-4">
                     <CardTitle className="text-lg">{formatted.title}</CardTitle>
                     <CardDescription>
-                      <div className="flex items-center gap-2 mt-2">
+                      <span className="flex items-center gap-2 mt-2">
                         <Badge variant="secondary">{formatted.difficulty}</Badge>
                         <span className="text-sm text-muted-foreground">
                           {formatted.prepTime} + {formatted.cookTime}
                         </span>
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">
+                      </span>
+                      <span className="text-sm text-muted-foreground mt-1">
                         {formatted.servings}
-                      </div>
+                      </span>
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button variant="outline" size="sm" className="flex-1" onClick={() => handleViewRecipe(recipe)}>
                         <Eye className="h-4 w-4 mr-2" />
                         Görüntüle
                       </Button>
@@ -425,9 +585,9 @@ function FoodsPageContent() {
                     </div>
                     {formatted.sourceId && (
                       <CardDescription>
-                        <code className="text-xs bg-muted px-2 py-1 rounded">
+                        <span className="text-xs bg-muted px-2 py-1 rounded font-mono">
                           {formatted.sourceId}
-                        </code>
+                        </span>
                       </CardDescription>
                     )}
                   </CardHeader>
@@ -640,6 +800,49 @@ function FoodsPageContent() {
         recipe={editingRecipe}
         mode={editingRecipe ? 'edit' : 'create'}
       />
+
+      {/* Tarif Görüntüleme Modal */}
+      {isViewRecipeModalOpen && viewingRecipe && (
+        <RecipeViewModal
+          recipe={viewingRecipe}
+          translations={state.recipeTranslations[viewingRecipe.id] || []}
+          ingredients={state.recipeIngredients[viewingRecipe.id]?.map(ri => {
+            const ingredient = state.ingredients.find(i => i.id === ri.ingredient_id)
+            if (!ingredient) return null
+            
+            return {
+              ingredient: ingredient,
+              quantity: ri.quantity,
+              unit: ri.unit,
+              notes: undefined
+            }
+          }).filter((item): item is NonNullable<typeof item> => item !== null) || []}
+          categories={state.recipeCategories[viewingRecipe.id]?.map(rc => {
+            const category = state.categories.find(c => c.id === rc.category_id)
+            if (!category) return null
+            
+            // Kategori çevirilerini bul
+            const categoryTranslations = state.categoryTranslations[category.id] || []
+            const categoryName = categoryTranslations.find(t => t.language_code === currentLanguage)?.name || category.slug
+            
+            return { ...category, name: categoryName }
+          }).filter((item): item is NonNullable<typeof item> => item !== null) || []}
+          cuisines={state.recipeCuisines[viewingRecipe.id]?.map(rc => {
+            const cuisine = state.cuisines.find(c => c.id === rc.cuisine_id)
+            if (!cuisine) return null
+            
+            // Mutfak çevirilerini bul
+            const cuisineTranslations = state.cuisineTranslations[cuisine.id] || []
+            const cuisineName = cuisineTranslations.find(t => t.language_code === currentLanguage)?.name || cuisine.slug
+            
+            return { ...cuisine, name: cuisineName }
+          }).filter((item): item is NonNullable<typeof item> => item !== null) || []}
+          ingredientTranslations={state.ingredientTranslations}
+          isOpen={isViewRecipeModalOpen}
+          onClose={closeViewRecipeModal}
+          currentLanguage={currentLanguage}
+        />
+      )}
 
       {/* Bulk Recipes Modal */}
       <BulkRecipesModal

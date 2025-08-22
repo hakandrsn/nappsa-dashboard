@@ -31,6 +31,12 @@ interface FoodsState {
   cuisineTranslations: Record<number, FoodCuisineTranslation[]>
   tagTranslations: Record<number, FoodTagTranslation[]>
   
+  // Junction Tables
+  recipeIngredients: Record<number, Array<{ ingredient_id: number; quantity: string; unit: string }>>
+  recipeCategories: Record<number, Array<{ category_id: number }>>
+  recipeTags: Record<number, Array<{ tag_id: number }>>
+  recipeCuisines: Record<number, Array<{ cuisine_id: number }>>
+  
   // UI State
   loading: boolean
   error: string | null
@@ -105,6 +111,12 @@ type FoodsAction =
   | { type: 'UPDATE_RECIPE'; payload: FoodRecipe }
   | { type: 'DELETE_RECIPE'; payload: number }
   | { type: 'SET_RECIPE_FILTERS'; payload: Partial<RecipeFilters> }
+  | { type: 'ADD_RECIPE_CATEGORY'; payload: { recipeId: number; categoryId: number } }
+  | { type: 'ADD_RECIPE_CUISINE'; payload: { recipeId: number; cuisineId: number } }
+  | { type: 'SET_RECIPE_INGREDIENTS'; payload: { recipeId: number; ingredients: Array<{ ingredient_id: number; quantity: string; unit: string }> } }
+  | { type: 'SET_RECIPE_CATEGORIES'; payload: { recipeId: number; categories: Array<{ category_id: number }> } }
+  | { type: 'SET_RECIPE_TAGS'; payload: { recipeId: number; tags: Array<{ tag_id: number }> } }
+  | { type: 'SET_RECIPE_CUISINES'; payload: { recipeId: number; cuisines: Array<{ cuisine_id: number }> } }
   
   // Ingredients
   | { type: 'SET_INGREDIENTS'; payload: PaginatedResponse<FoodIngredient> }
@@ -157,6 +169,12 @@ const initialState: FoodsState = {
   categoryTranslations: {},
   cuisineTranslations: {},
   tagTranslations: {},
+  
+  // Junction Tables
+  recipeIngredients: {},
+  recipeCategories: {},
+  recipeTags: {},
+  recipeCuisines: {},
   
   // UI State
   loading: false,
@@ -281,6 +299,60 @@ function foodsReducer(state: FoodsState, action: FoodsAction): FoodsState {
           recipes: { ...state.activeFilters.recipes, ...action.payload }
         },
         recipesPagination: { ...state.recipesPagination, page: 1 }
+      }
+    
+    case 'ADD_RECIPE_CATEGORY':
+      return {
+        ...state,
+        recipeCategories: {
+          ...state.recipeCategories,
+          [action.payload.recipeId]: [...(state.recipeCategories[action.payload.recipeId] || []), { category_id: action.payload.categoryId }]
+        }
+      }
+    
+    case 'ADD_RECIPE_CUISINE':
+      return {
+        ...state,
+        recipeCuisines: {
+          ...state.recipeCuisines,
+          [action.payload.recipeId]: [...(state.recipeCuisines[action.payload.recipeId] || []), { cuisine_id: action.payload.cuisineId }]
+        }
+      }
+    
+    case 'SET_RECIPE_INGREDIENTS':
+      return {
+        ...state,
+        recipeIngredients: {
+          ...state.recipeIngredients,
+          [action.payload.recipeId]: action.payload.ingredients
+        }
+      }
+    
+    case 'SET_RECIPE_CATEGORIES':
+      return {
+        ...state,
+        recipeCategories: {
+          ...state.recipeCategories,
+          [action.payload.recipeId]: action.payload.categories
+        }
+      }
+    
+    case 'SET_RECIPE_TAGS':
+      return {
+        ...state,
+        recipeTags: {
+          ...state.recipeTags,
+          [action.payload.recipeId]: action.payload.tags
+        }
+      }
+    
+    case 'SET_RECIPE_CUISINES':
+      return {
+        ...state,
+        recipeCuisines: {
+          ...state.recipeCuisines,
+          [action.payload.recipeId]: action.payload.cuisines
+        }
       }
     
     // Ingredients

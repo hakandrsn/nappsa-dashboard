@@ -1131,6 +1131,308 @@ export function useFoodsApi() {
     }
   }, [dispatch])
 
+  // =============================================
+  // JUNCTION TABLE FONKSİYONLARI
+  // =============================================
+
+  // Kategori adından ID bul
+  const findCategoryIdByName = useCallback(async (categoryName: string): Promise<number | null> => {
+    try {
+      console.log(`🔍 Kategori aranıyor: "${categoryName}"`)
+      
+      // Önce çevirilerde arama yap
+      const { data: translations, error: translationError } = await supabase
+        .from('food_category_translations')
+        .select('category_id, name')
+        .ilike('name', `%${categoryName}%`)
+
+      if (translationError) {
+        console.warn(`❌ Kategori çevirisi bulunamadı: ${categoryName}`, translationError)
+        return null
+      }
+
+      if (translations && translations.length > 0) {
+        console.log(`✅ Kategori çeviride bulundu: ${categoryName} -> ID: ${translations[0].category_id}`)
+        return translations[0].category_id
+      }
+
+      console.log(`⚠️ Çeviride bulunamadı, slug ile deneniyor: ${categoryName}`)
+
+      // Eğer çeviride bulunamazsa, slug ile dene
+      const { data: category, error: categoryError } = await supabase
+        .from('food_categories')
+        .select('id')
+        .eq('slug', categoryName.toLowerCase().replace(/\s+/g, '-'))
+        .single()
+
+      if (categoryError) {
+        console.warn(`❌ Kategori bulunamadı: ${categoryName}`, categoryError)
+        return null
+      }
+
+      if (category?.id) {
+        console.log(`✅ Kategori slug ile bulundu: ${categoryName} -> ID: ${category.id}`)
+        return category.id
+      }
+
+      console.warn(`❌ Kategori hiçbir yöntemle bulunamadı: ${categoryName}`)
+      return null
+    } catch (error) {
+      console.warn(`❌ Kategori arama hatası: ${categoryName}`, error)
+      return null
+    }
+  }, [])
+
+  // Tarif-kategori bağlantısı oluştur
+  const createRecipeCategory = useCallback(async (recipeId: number, categoryId: number) => {
+    try {
+      const { error } = await supabase
+        .from('food_recipe_categories')
+        .insert({ recipe_id: recipeId, category_id: categoryId })
+
+      if (error) throw error
+      return true
+    } catch (error) {
+      console.error('Tarif-kategori bağlantısı oluşturulamadı:', error)
+      throw error
+    }
+  }, [])
+
+  // Mutfak adından ID bul
+  const findCuisineIdByName = useCallback(async (cuisineName: string): Promise<number | null> => {
+    try {
+      console.log(`🔍 Mutfak aranıyor: "${cuisineName}"`)
+      
+      // Önce çevirilerde arama yap
+      const { data: translations, error: translationError } = await supabase
+        .from('food_cuisine_translations')
+        .select('cuisine_id, name')
+        .ilike('name', `%${cuisineName}%`)
+
+      if (translationError) {
+        console.warn(`❌ Mutfak çevirisi bulunamadı: ${cuisineName}`, translationError)
+        return null
+      }
+
+      if (translations && translations.length > 0) {
+        console.log(`✅ Mutfak çeviride bulundu: ${cuisineName} -> ID: ${translations[0].cuisine_id}`)
+        return translations[0].cuisine_id
+      }
+
+      console.log(`⚠️ Çeviride bulunamadı, slug ile deneniyor: ${cuisineName}`)
+
+      // Eğer çeviride bulunamazsa, slug ile dene
+      const { data: cuisine, error: cuisineError } = await supabase
+        .from('food_cuisines')
+        .select('id')
+        .eq('slug', cuisineName.toLowerCase().replace(/\s+/g, '-'))
+        .single()
+
+      if (cuisineError) {
+        console.warn(`❌ Mutfak bulunamadı: ${cuisineName}`, cuisineError)
+        return null
+      }
+
+      if (cuisine?.id) {
+        console.log(`✅ Mutfak slug ile bulundu: ${cuisineName} -> ID: ${cuisine.id}`)
+        return cuisine.id
+      }
+
+      console.warn(`❌ Mutfak hiçbir yöntemle bulunamadı: ${cuisineName}`)
+      return null
+    } catch (error) {
+      console.warn(`❌ Mutfak arama hatası: ${cuisineName}`, error)
+      return null
+    }
+  }, [])
+
+  // Tarif-mutfak bağlantısı oluştur
+  const createRecipeCuisine = useCallback(async (recipeId: number, cuisineId: number) => {
+    try {
+      const { error } = await supabase
+        .from('food_recipe_cuisines')
+        .insert({ recipe_id: recipeId, cuisine_id: cuisineId })
+
+      if (error) throw error
+      return true
+    } catch (error) {
+      console.error('Tarif-mutfak bağlantısı oluşturulamadı:', error)
+      throw error
+    }
+  }, [])
+
+  // Etiket adından ID bul (Devre dışı - sadece kategoriler kullanılıyor)
+  const findTagIdByName = useCallback(async (tagName: string): Promise<number | null> => {
+    console.log(`⚠️ Etiketler devre dışı: "${tagName}" - sadece kategoriler kullanılıyor`)
+    return null
+  }, [])
+
+  // Tarif-etiket bağlantısı oluştur (Devre dışı - sadece kategoriler kullanılıyor)
+  const createRecipeTag = useCallback(async (recipeId: number, tagId: number) => {
+    console.log(`⚠️ Etiketler devre dışı: Recipe ${recipeId} - sadece kategoriler kullanılıyor`)
+    return true
+  }, [])
+
+  // Malzeme adından ID bul
+  const findIngredientIdByName = useCallback(async (ingredientName: string): Promise<number | null> => {
+    try {
+      console.log(`🔍 Malzeme aranıyor: "${ingredientName}"`)
+      
+      // Önce çevirilerde arama yap
+      const { data: translations, error: translationError } = await supabase
+        .from('food_ingredient_translations')
+        .select('ingredient_id, name')
+        .ilike('name', `%${ingredientName}%`)
+
+      if (translationError) {
+        console.warn(`❌ Malzeme çevirisi bulunamadı: ${ingredientName}`, translationError)
+        return null
+      }
+
+      if (translations && translations.length > 0) {
+        console.log(`✅ Malzeme çeviride bulundu: ${ingredientName} -> ID: ${translations[0].ingredient_id}`)
+        return translations[0].ingredient_id
+      }
+
+      console.log(`⚠️ Çeviride bulunamadı, source_id ile deneniyor: ${ingredientName}`)
+
+      // Eğer çeviride bulunamazsa, source_id ile dene
+      const { data: ingredient, error: ingredientError } = await supabase
+        .from('food_ingredients')
+        .select('id')
+        .eq('source_id', ingredientName.toLowerCase().replace(/\s+/g, '-'))
+        .single()
+
+      if (ingredientError) {
+        console.warn(`❌ Malzeme bulunamadı: ${ingredientName}`, ingredientError)
+        return null
+      }
+
+      if (ingredient?.id) {
+        console.log(`✅ Malzeme source_id ile bulundu: ${ingredientName} -> ID: ${ingredient.id}`)
+        return ingredient.id
+      }
+
+      console.warn(`❌ Malzeme hiçbir yöntemle bulunamadı: ${ingredientName}`)
+      return null
+    } catch (error) {
+      console.warn(`❌ Malzeme arama hatası: ${ingredientName}`, error)
+      return null
+    }
+  }, [])
+
+  // Tarif-malzeme bağlantısı oluştur
+  const createRecipeIngredient = useCallback(async (recipeId: number, ingredientId: number, quantity: string, unit: string) => {
+    try {
+      console.log(`🔗 Malzeme bağlantısı oluşturuluyor: Recipe ${recipeId}, Ingredient ${ingredientId}, Quantity ${quantity}, Unit ${unit}`)
+      
+      // Önce duplicate kontrolü yap
+      const { data: existing, error: checkError } = await supabase
+        .from('food_recipe_ingredients')
+        .select('id')
+        .eq('recipe_id', recipeId)
+        .eq('ingredient_id', ingredientId)
+        .single()
+
+      if (existing) {
+        console.log(`⚠️ Malzeme zaten mevcut: Recipe ${recipeId}, Ingredient ${ingredientId} - güncelleniyor`)
+        
+        // Mevcut kaydı güncelle
+        const { error: updateError } = await supabase
+          .from('food_recipe_ingredients')
+          .update({ quantity, unit })
+          .eq('recipe_id', recipeId)
+          .eq('ingredient_id', ingredientId)
+
+        if (updateError) throw updateError
+        
+        console.log(`✅ Malzeme güncellendi`)
+        return true
+      }
+
+      // Yeni kayıt ekle
+      const { error } = await supabase
+        .from('food_recipe_ingredients')
+        .insert({ 
+          recipe_id: recipeId, 
+          ingredient_id: ingredientId, 
+          quantity, 
+          unit 
+        })
+
+      if (error) throw error
+      
+      console.log(`✅ Malzeme bağlantısı oluşturuldu`)
+      return true
+    } catch (error) {
+      console.error('❌ Tarif-malzeme bağlantısı oluşturulamadı:', error)
+      throw error
+    }
+  }, [])
+
+  // Junction table verilerini çekmek için yeni fonksiyonlar
+  const fetchRecipeIngredients = useCallback(async (recipeId: number) => {
+    try {
+      console.log(`🔍 Tarif malzemeleri çekiliyor: Recipe ${recipeId}`)
+      
+      const { data, error } = await supabase
+        .from('food_recipe_ingredients')
+        .select(`
+          ingredient_id,
+          quantity,
+          unit,
+          notes
+        `)
+        .eq('recipe_id', recipeId)
+
+      if (error) throw error
+      
+      console.log(`✅ Tarif malzemeleri çekildi: ${data?.length || 0} adet`)
+      return data || []
+    } catch (error) {
+      console.error('❌ Tarif malzemeleri çekilemedi:', error)
+      return []
+    }
+  }, [])
+
+  const fetchRecipeCategories = useCallback(async (recipeId: number) => {
+    try {
+      console.log(`🔍 Tarif kategorileri çekiliyor: Recipe ${recipeId}`)
+      
+      const { data, error } = await supabase
+        .from('food_recipe_categories')
+        .select('category_id')
+        .eq('recipe_id', recipeId)
+
+      if (error) throw error
+      
+      console.log(`✅ Tarif kategorileri çekildi: ${data?.length || 0} adet`)
+      return data || []
+    } catch (error) {
+      console.error('❌ Tarif kategorileri çekilemedi:', error)
+      return []
+    }
+  }, [])
+
+  const fetchRecipeCuisines = useCallback(async (recipeId: number) => {
+    try {
+      console.log(`🔍 Tarif mutfakları çekiliyor: Recipe ${recipeId}`)
+      
+      const { data, error } = await supabase
+        .from('food_recipe_cuisines')
+        .select('cuisine_id')
+        .eq('recipe_id', recipeId)
+
+      if (error) throw error
+      
+      console.log(`✅ Tarif mutfakları çekildi: ${data?.length || 0} adet`)
+      return data || []
+    } catch (error) {
+      console.error('❌ Tarif mutfakları çekilemedi:', error)
+      return []
+    }
+  }, [])
+
   return {
     // Recipes
     fetchRecipes,
@@ -1169,6 +1471,21 @@ export function useFoodsApi() {
     
     // Common
     loading: state.loading,
-    error: state.error
+    error: state.error,
+
+    // Junction Table Functions
+    findCategoryIdByName,
+    createRecipeCategory,
+    findCuisineIdByName,
+    createRecipeCuisine,
+    findTagIdByName,
+    createRecipeTag,
+    findIngredientIdByName,
+    createRecipeIngredient,
+    
+    // Junction Table Fetch Functions
+    fetchRecipeIngredients,
+    fetchRecipeCategories,
+    fetchRecipeCuisines
   }
 }
