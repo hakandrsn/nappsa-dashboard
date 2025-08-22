@@ -647,9 +647,9 @@ export function createJunctionTableData(
   recipeIngredients: Array<{ recipe_id: number; ingredient_id: number; quantity: string; unit: string }>;
 } {
   return {
-    recipeCategories: categories.map(category => ({ recipe_id: recipeId, category_id: 0 })), // TODO: category_id bul
-    recipeCuisines: cuisines.map(cuisine => ({ recipe_id: recipeId, cuisine_id: 0 })), // TODO: cuisine_id bul
-    recipeTags: tags.map(tag => ({ recipe_id: recipeId, tag_id: 0 })), // TODO: tag_id bul
+    recipeCategories: categories.map(() => ({ recipe_id: recipeId, category_id: 0 })), // TODO: category_id bul
+    recipeCuisines: cuisines.map(() => ({ recipe_id: recipeId, cuisine_id: 0 })), // TODO: cuisine_id bul
+    recipeTags: tags.map(() => ({ recipe_id: recipeId, tag_id: 0 })), // TODO: tag_id bul
     recipeIngredients: ingredients.map(ingredient => ({ 
       recipe_id: recipeId, 
       ingredient_id: 0, // TODO: ingredient_id bul

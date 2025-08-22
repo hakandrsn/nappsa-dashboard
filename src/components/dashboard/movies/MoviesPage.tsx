@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import type { Movie } from '@/api/types'
 import { MoviesTable } from './MoviesTable'
 import { MovieFormModal } from './MovieFormModal'
 import { MultipleMoviesModal } from './MultipleMoviesModal'
 import { MoviesProvider } from '@/contexts/MoviesContext'
 import { useMoviesApi } from '@/hooks/use-movies-api'
+import { useMovies } from '@/contexts/MoviesContext'
 import { Button } from '@/components/ui/button'
 import { 
   Dialog, 
@@ -13,10 +14,10 @@ import {
   DialogTitle,
   DialogFooter
 } from '@/components/ui/dialog'
-import { formatMovieData } from '@/lib/movies-utils'
-import { Trash2, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 
 function MoviesPageContent() {
+  const { state } = useMovies()
   const { fetchMovies, deleteMovie, loading } = useMoviesApi()
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
@@ -48,9 +49,12 @@ function MoviesPageContent() {
   }
 
   // Film silme
-  const handleDelete = (movie: Movie) => {
-    setMovieToDelete(movie)
-    setIsDeleteModalOpen(true)
+  const handleDelete = (movieId: number) => {
+    const movie = state.movies.find((m: Movie) => m.id === movieId)
+    if (movie) {
+      setMovieToDelete(movie)
+      setIsDeleteModalOpen(true)
+    }
   }
 
   // Film görüntüleme

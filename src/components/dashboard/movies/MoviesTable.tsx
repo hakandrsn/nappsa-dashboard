@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { Movie } from '@/api/types'
 import { formatMovieData } from '@/lib/movies-utils'
 import { Button } from '@/components/ui/button'

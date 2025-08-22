@@ -1,4 +1,4 @@
-import React from 'react'
+
 import { X, Clock, Users, ChefHat, Utensils, Tag, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'

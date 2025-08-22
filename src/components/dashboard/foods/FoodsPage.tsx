@@ -18,7 +18,6 @@ import {
   Globe, 
   Plus,
   Edit,
-  Trash2,
   Eye,
   Download,
   Upload

@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import type { CreateMovie, MovieTranslation } from '@/api/types'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { 
@@ -107,7 +107,7 @@ export function MultipleMoviesModal({ isOpen, onClose, onSuccess }: MultipleMovi
 
   // Filmleri kaydet
   const handleSubmit = async () => {
-    if (previewData.length === 0) {
+    if (!previewData || previewData.length === 0) {
       setErrors(['Önce JSON verisini parse edin'])
       return
     }
@@ -228,7 +228,7 @@ export function MultipleMoviesModal({ isOpen, onClose, onSuccess }: MultipleMovi
             </TabsContent>
 
             <TabsContent value="preview" className="space-y-4">
-              {previewData.length === 0 ? (
+              {!previewData || previewData.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Info className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>Önce JSON verisini parse edin</p>
@@ -236,14 +236,14 @@ export function MultipleMoviesModal({ isOpen, onClose, onSuccess }: MultipleMovi
               ) : (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium">Önizleme: {previewData.length} Film</h4>
+                    <h4 className="font-medium">Önizleme: {previewData?.length || 0} Film</h4>
                     <Button onClick={handleSubmit} disabled={loading}>
-                      {loading ? 'Ekleniyor...' : `${previewData.length} Filmi Ekle`}
+                      {loading ? 'Ekleniyor...' : `${previewData?.length || 0} Filmi Ekle`}
                     </Button>
                   </div>
 
                   <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {previewData.map((item, index) => (
+                    {previewData?.map((item, index) => (
                       <div key={index} className="border rounded-lg p-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <h5 className="font-medium">Film {index + 1}</h5>

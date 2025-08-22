@@ -49,8 +49,6 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
     createRecipeCategory,
     findCuisineIdByName,
     createRecipeCuisine,
-    findTagIdByName,
-    createRecipeTag,
     findIngredientIdByName,
     createRecipeIngredient
   } = useFoodsApi()

@@ -31,7 +31,7 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
 RadioGroup.displayName = "RadioGroup"
 
 const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps & { checked?: boolean; onChange?: () => void }>(
-  ({ className, value, id, children, checked, onChange, ...props }, ref) => {
+  ({ className, value, id, children, checked, onChange, ...props }) => {
     return (
       <div className="flex items-center space-x-2">
         <input

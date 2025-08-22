@@ -1268,7 +1268,7 @@ export function useFoodsApi() {
   }, [])
 
   // Tarif-etiket bağlantısı oluştur (Devre dışı - sadece kategoriler kullanılıyor)
-  const createRecipeTag = useCallback(async (recipeId: number, tagId: number) => {
+  const createRecipeTag = useCallback(async (recipeId: number) => {
     console.log(`⚠️ Etiketler devre dışı: Recipe ${recipeId} - sadece kategoriler kullanılıyor`)
     return true
   }, [])
@@ -1327,7 +1327,7 @@ export function useFoodsApi() {
       console.log(`🔗 Malzeme bağlantısı oluşturuluyor: Recipe ${recipeId}, Ingredient ${ingredientId}, Quantity ${quantity}, Unit ${unit}`)
       
       // Önce duplicate kontrolü yap
-      const { data: existing, error: checkError } = await supabase
+      const { data: existing } = await supabase
         .from('food_recipe_ingredients')
         .select('id')
         .eq('recipe_id', recipeId)
