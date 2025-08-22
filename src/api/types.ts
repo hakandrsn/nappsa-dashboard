@@ -338,3 +338,94 @@ export interface MovieFormData {
   productioncompanies?: any;
   externallinks?: string[];
 }
+
+// Flow Types - Mevcut tablolara göre düzenlendi (flow tablosu yok)
+export interface FlowQuestion {
+  id: number
+  slug: string
+  is_start_question: boolean
+  created_at: string
+}
+
+export interface FlowQuestionTranslation {
+  question_id: number
+  language_code: string
+  text: string
+}
+
+export interface FlowAnswer {
+  id: number
+  question_id: number
+  next_question_id?: number
+  action_id?: number
+  created_at: string
+}
+
+export interface FlowAnswerTranslation {
+  answer_id: number
+  language_code: string
+  text: string
+}
+
+export interface FlowAction {
+  id: number
+  description: string
+  action_type: string
+  parameters: Record<string, any>
+  created_at: string
+}
+
+export interface FlowQuestionWithDetails extends FlowQuestion {
+  translations: FlowQuestionTranslation[]
+  answers: (FlowAnswer & {
+    translations: FlowAnswerTranslation[]
+    next_question?: FlowQuestion
+    action?: FlowAction
+  })[]
+}
+
+export interface CreateQuestionData {
+  slug: string
+  is_start_question?: boolean
+  translations: { language_code: 'tr' | 'en'; text: string }[] // Dil seçeneği zorunlu
+}
+
+export interface CreateAnswerData {
+  question_id: number
+  next_question_id?: number
+  action_id?: number
+  translations: { language_code: 'tr' | 'en'; text: string }[] // Dil seçeneği zorunlu
+}
+
+export interface CreateActionData {
+  description: string
+  action_type: string
+  parameters: Record<string, any>
+}
+
+// Action Types
+export const ACTION_TYPES = {
+  FETCH_RANDOM_RECIPE: 'FETCH_RANDOM_RECIPE',
+  FETCH_RECIPE_BY_CUISINE: 'FETCH_RECIPE_BY_CUISINE',
+  FETCH_MOVIE_BY_GENRE: 'FETCH_MOVIE_BY_GENRE',
+  FETCH_CHAT_TOPIC: 'FETCH_CHAT_TOPIC',
+  SHOW_CUSTOM_MESSAGE: 'SHOW_CUSTOM_MESSAGE',
+  REDIRECT_TO_URL: 'REDIRECT_TO_URL',
+  OPEN_MODAL: 'OPEN_MODAL',
+  CALL_API_ENDPOINT: 'CALL_API_ENDPOINT',
+} as const
+
+export type ActionType = typeof ACTION_TYPES[keyof typeof ACTION_TYPES]
+
+// Action Parameters
+export interface ActionParameters {
+  table_name?: string
+  filters?: Record<string, any>
+  message?: string
+  url?: string
+  api_endpoint?: string
+  modal_content?: string
+  cuisine_slug?: string
+  genre_slug?: string
+  [key: string]: any
+}

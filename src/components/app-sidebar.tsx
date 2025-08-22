@@ -1,13 +1,13 @@
 import * as React from "react"
 import {
   ChefHat,
-  Utensils,
   Tags,
   Globe,
   Film,
   Users,
   Home,
   Settings,
+  GitBranch,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -48,7 +48,12 @@ const data = {
       icon: ChefHat,
       isActive: false,
     },
-   
+    {
+      title: "Flow",
+      url: "/dashboard/flows",
+      icon: GitBranch,
+      isActive: false,
+    },
     {
       title: "Kategoriler",
       url: "/dashboard/categories",

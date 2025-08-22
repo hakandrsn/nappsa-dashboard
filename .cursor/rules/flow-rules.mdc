@@ -1,0 +1,168 @@
+---
+description: Flow
+globs:
+alwaysApply: true
+---
+Özellik Dökümanı: Dinamik Kullanıcı Akış Motoru ("Sihirbaz" Yapısı)
+1. Amaç ve Genel Bakış
+Bu döküman, kullanıcıya adım adım sorular sorarak ve aldığı cevaplara göre yeni sorular yönlendirerek onu kişiselleştirilmiş bir sonuca (eyleme) ulaştıran Dinamik Kullanıcı Akış Motoru'nun teknik mimarisini ve kullanım kurallarını tanımlar.
+
+Temel Amaç: Uygulama içerisinde, admin panelinden (dashboard) kodlama gerektirmeden tamamen yönetilebilen, interaktif "sihirbazlar" veya "karar ağaçları" oluşturmaktır. Bu yapı, kullanıcıya "Ne yapmak istersin?" gibi sorular sorarak ona özel yemek tarifleri, sohbet konuları veya başka içerikler önermeyi sağlar.
+
+Mimari Felsefesi: Sistem, bir "Karar Ağacı" (Decision Tree) mantığına dayanır:
+
+Her Soru bir "Düğüm"dür (Node): Kullanıcının karşılaştığı her bir aşama.
+
+Her Cevap bir "Yol"dur (Edge): Kullanıcının seçimiyle bir sonraki düğüme (soruya) veya nihai sonuca (eyleme) giden yol.
+
+Bu mimari, Supabase (PostgreSQL) veritabanında ilişkisel tablolarla modellenmiştir.
+
+2. Veritabanı Şeması
+Sistemin kalbi, birbiriyle ilişkili 4 ana tablo ve onların çeviri tablolarından oluşur. İsimlendirmede flow_ öneki kullanılır.
+
+2.1. flow_actions
+Akışın sonunda tetiklenecek olan nihai eylemleri tanımlar.
+
+Sütun Adı	Veri Tipi	Açıklama
+id	BIGINT	Benzersiz ID (Primary Key).
+description	TEXT	Eylemin ne yaptığını dashboard'da görmek için açıklama (örn: 'Rastgele yemek tarifi getirir').
+action_type	TEXT	Eylemin tipini belirten kod. Frontend bu koda göre hareket eder (örn: 'FETCH_RANDOM_RECIPE').
+parameters	JSONB	Eylem için gerekli ek bilgiler. (örn: {"table_name": "food_recipes"}).
+created_at	TIMESTAMPTZ	Kayıt oluşturulma tarihi.
+
+E-Tablolar'a aktar
+2.2. flow_questions & flow_question_translations
+Akışta sorulacak tüm soruları ve çevirilerini barındırır.
+
+flow_questions (Ana Tablo)
+| Sütun Adı | Veri Tipi | Açıklama |
+| :--- | :--- | :--- |
+| id | BIGINT | Benzersiz ID (Primary Key). |
+| slug | TEXT | Soru için dilden bağımsız, benzersiz ve yönetimi kolay kimlik (örn: 'ask_location'). |
+| is_start_question| BOOLEAN | TRUE ise bu soru bir akışın başlangıç noktasıdır. |
+| created_at | TIMESTAMPTZ| Kayıt oluşturulma tarihi. |
+
+flow_question_translations (Çeviri Tablosu)
+| Sütun Adı | Veri Tipi | Açıklama |
+| :--- | :--- | :--- |
+| question_id| BIGINT | flow_questions.id'ye bağlı Yabancı Anahtar (Foreign Key). |
+| language_code| VARCHAR(5)| Dil kodu (örn: 'tr', 'en'). |
+| text | TEXT | Sorunun o dildeki metni. |
+
+2.3. flow_answers & flow_answer_translations
+Her soru için sunulacak seçenekleri, çevirilerini ve en önemlisi akışın bir sonraki adımını tanımlar.
+
+flow_answers (Ana Tablo)
+| Sütun Adı | Veri Tipi | Açıklama |
+| :--- | :--- | :--- |
+| id | BIGINT | Benzersiz ID (Primary Key). |
+| question_id| BIGINT | Bu cevabın hangi soruya ait olduğunu belirtir (flow_questions.id'ye FK). |
+| next_question_id| BIGINT | Cevap seçilirse gidilecek bir sonraki sorunun ID'si. action_id doluysa NULL olmalıdır. |
+| action_id | BIGINT | Cevap seçilirse tetiklenecek son eylemin ID'si. next_question_id doluysa NULL olmalıdır. |
+| created_at | TIMESTAMPTZ| Kayıt oluşturulma tarihi. |
+| Kısıtlama (Constraint)| CHECK | next_question_id ve action_id sütunlarından sadece birinin dolu olmasını zorunlu kılar. |
+
+flow_answer_translations (Çeviri Tablosu)
+| Sütun Adı | Veri Tipi | Açıklama |
+| :--- | :--- | :--- |
+| answer_id | BIGINT | flow_answers.id'ye bağlı Yabancı Anahtar (Foreign Key). |
+| language_code| VARCHAR(5)| Dil kodu (örn: 'tr', 'en'). |
+| text | TEXT | Cevabın o dildeki metni. |
+
+3. Sistem Mimarisi ve Veri Akışı
+Sistem, iki ana aktör tarafından kullanılır: Dashboard'daki Yönetici ve uygulamadaki Son Kullanıcı.
+
+Akış Diyagramı:
+[Başlangıç Sorusu] --- (Cevap Seçimi) ---> [Ara Soru] --- (Cevap Seçimi) ---> [...] --- (Cevap Seçimi) ---> [Son Eylem]
+
+4. Kullanım Senaryoları ve Geliştirme Kuralları
+4.1. Dashboard Geliştirme İçin Kurallar ve Senaryolar
+Dashboard, yöneticinin kod yazmadan akışlar oluşturmasını ve düzenlemesini sağlamalıdır.
+
+Senaryo: Yeni Bir Akış Oluşturma
+Yönetici, aşağıdaki adımları izleyerek yeni bir akış yaratır:
+
+Eylemleri Tanımla: Önce akışların sonunda ulaşılacak sonuçlar flow_actions tablosuna eklenir. (örn: "Rastgele Sohbet Konusu Getir" eylemi).
+
+Soruları Tanımla: Akışta kullanılacak tüm sorular flow_questions ve çevirileri flow_question_translations tablolarına eklenir. Akışı başlatacak sorulardan biri is_start_question = TRUE olarak işaretlenir.
+
+Cevapları Tanımla: Tüm cevap seçenekleri flow_answers ve çevirileri flow_answer_translations tablolarına eklenir.
+
+Akışı Bağlama (En Kritik Adım): Her bir cevap kaydı oluşturulurken, o cevabın hangi soruya ait olduğu (question_id) ve seçildiğinde nereye gideceği (next_question_id VEYA action_id) belirtilir.
+
+Kural: Dashboard arayüzü, bir cevap için hem next_question_id hem de action_id girilmesini engellemeli, kullanıcıya bu ikisinden birini seçtirmelidir.
+
+4.2. Frontend (Expo Uygulaması) Geliştirme İçin Kurallar ve Senaryolar
+Frontend'in görevi, veritabanında tanımlanan bu akışı adım adım kullanıcıya sunmaktır.
+
+State (Durum) Yönetimi
+Component içinde aşağıdaki gibi bir state yapısı önerilir:
+
+JavaScript
+
+const [flowState, setFlowState] = useState({
+  currentQuestion: null, // Gösterilecek mevcut soru objesi
+  finalAction: null,     // Akış bittiğinde tetiklenecek eylem objesi
+  isLoading: true,
+  error: null
+});
+Uygulama Akış Algoritması
+Başlatma: Component yüklendiğinde, is_start_question = TRUE olan soru, çevirileri ve cevap seçenekleriyle birlikte veritabanından çekilir ve currentQuestion state'ine yazılır.
+
+Görselleştirme: currentQuestion state'indeki soru metni ve cevap seçenekleri ekranda gösterilir.
+
+Kullanıcı Etkileşimi: Kullanıcı bir cevaba tıklar.
+
+İlerleme: Tıklanan cevap objesinden next_question_id ve action_id değerleri okunur:
+a.  Eğer next_question_id doluysa, bu ID ile bir sonraki soru ve cevapları çekilir. Gelen yeni veri currentQuestion state'ini günceller ve arayüz yeniden çizilir (2. adıma dönülür).
+b.  Eğer action_id doluysa, bu ID ile ilgili eylem flow_actions tablosundan çekilir, finalAction state'ine yazılır ve akış sonlanır.
+
+Eylemi Gerçekleştirme: finalAction state'i dolduğunda, arayüz bu eylemin sonucunu gösterir. action_type'a göre (FETCH_RANDOM_RECIPE vb.) ilgili API çağrısı yapılarak kullanıcıya sonuç (yemek tarifi, sohbet konusu vb.) gösterilir.
+
+API Çağrıları Kuralı
+Frontend kodunu temiz tutmak için karmaşık JOIN sorguları yerine basit ve amaca yönelik RPC fonksiyonları oluşturulması şiddetle tavsiye edilir.
+
+5. Örnek API (RPC) Fonksiyonları
+Frontend'in işini kolaylaştırmak için aşağıdaki gibi RPC fonksiyonları oluşturulmalıdır.
+
+get_flow_question(p_question_id, p_language_code)
+Belirtilen ID'ye sahip soruyu, çevirisini ve o soruya ait tüm cevapların çevirilerini tek bir JSON objesi olarak döndürür.
+
+SQL
+
+-- Örnek bir RPC fonksiyonu
+CREATE OR REPLACE FUNCTION get_flow_question(p_question_id BIGINT, p_language_code VARCHAR(5))
+RETURNS JSONB
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    result JSONB;
+BEGIN
+    SELECT
+        jsonb_build_object(
+            'id', q.id,
+            'slug', q.slug,
+            'text', qt.text,
+            'answers', (
+                SELECT jsonb_agg(
+                    jsonb_build_object(
+                        'id', a.id,
+                        'next_question_id', a.next_question_id,
+                        'action_id', a.action_id,
+                        'text', at.text
+                    )
+                )
+                FROM public.flow_answers AS a
+                JOIN public.flow_answer_translations AS at ON a.id = at.answer_id
+                WHERE a.question_id = q.id AND at.language_code = p_language_code
+            )
+        )
+    INTO result
+    FROM public.flow_questions AS q
+    JOIN public.flow_question_translations AS qt ON q.id = qt.question_id
+    WHERE q.id = p_question_id AND qt.language_code = p_language_code;
+
+    RETURN result;
+END;
+$$;
+Bu fonksiyon, frontend'in her adımda sadece get_flow_question(yeni_id, 'tr') şeklinde tek bir çağrı yapmasını sağlar. Başlangıç sorusu için de is_start_question = TRUE olanı getiren benzer bir fonksiyon (get_start_question) oluşturulabilir.

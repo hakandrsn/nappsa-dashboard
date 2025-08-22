@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardMoviesRouteImport } from './routes/dashboard/movies'
 import { Route as DashboardFoodsRouteImport } from './routes/dashboard/foods'
+import { Route as DashboardFlowsRouteImport } from './routes/dashboard/flows'
 import { Route as DashboardLayoutRouteImport } from './routes/dashboard/_layout'
 
 const LoginRoute = LoginRouteImport.update({
@@ -47,6 +48,11 @@ const DashboardFoodsRoute = DashboardFoodsRouteImport.update({
   path: '/foods',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardFlowsRoute = DashboardFlowsRouteImport.update({
+  id: '/flows',
+  path: '/flows',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardLayoutRoute = DashboardLayoutRouteImport.update({
   id: '/_layout',
   getParentRoute: () => DashboardRoute,
@@ -56,6 +62,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardLayoutRoute
   '/login': typeof LoginRoute
+  '/dashboard/flows': typeof DashboardFlowsRoute
   '/dashboard/foods': typeof DashboardFoodsRoute
   '/dashboard/movies': typeof DashboardMoviesRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/flows': typeof DashboardFlowsRoute
   '/dashboard/foods': typeof DashboardFoodsRoute
   '/dashboard/movies': typeof DashboardMoviesRoute
 }
@@ -73,6 +81,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
   '/dashboard/_layout': typeof DashboardLayoutRoute
+  '/dashboard/flows': typeof DashboardFlowsRoute
   '/dashboard/foods': typeof DashboardFoodsRoute
   '/dashboard/movies': typeof DashboardMoviesRoute
   '/dashboard/': typeof DashboardIndexRoute
@@ -83,17 +92,25 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/dashboard/flows'
     | '/dashboard/foods'
     | '/dashboard/movies'
     | '/dashboard/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard' | '/dashboard/foods' | '/dashboard/movies'
+  to:
+    | '/'
+    | '/login'
+    | '/dashboard'
+    | '/dashboard/flows'
+    | '/dashboard/foods'
+    | '/dashboard/movies'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/login'
     | '/dashboard/_layout'
+    | '/dashboard/flows'
     | '/dashboard/foods'
     | '/dashboard/movies'
     | '/dashboard/'
@@ -149,6 +166,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardFoodsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/flows': {
+      id: '/dashboard/flows'
+      path: '/flows'
+      fullPath: '/dashboard/flows'
+      preLoaderRoute: typeof DashboardFlowsRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/_layout': {
       id: '/dashboard/_layout'
       path: ''
@@ -161,6 +185,7 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardLayoutRoute: typeof DashboardLayoutRoute
+  DashboardFlowsRoute: typeof DashboardFlowsRoute
   DashboardFoodsRoute: typeof DashboardFoodsRoute
   DashboardMoviesRoute: typeof DashboardMoviesRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -168,6 +193,7 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardLayoutRoute: DashboardLayoutRoute,
+  DashboardFlowsRoute: DashboardFlowsRoute,
   DashboardFoodsRoute: DashboardFoodsRoute,
   DashboardMoviesRoute: DashboardMoviesRoute,
   DashboardIndexRoute: DashboardIndexRoute,
