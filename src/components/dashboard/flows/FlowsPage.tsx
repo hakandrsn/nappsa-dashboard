@@ -695,8 +695,10 @@ function FlowsPageContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Kategori</TableHead>
                     <TableHead>Açıklama</TableHead>
                     <TableHead>Action Tipi</TableHead>
+                    <TableHead>Durum</TableHead>
                     <TableHead>Oluşturma Tarihi</TableHead>
                     <TableHead className="text-right">İşlemler</TableHead>
                   </TableRow>
@@ -704,9 +706,29 @@ function FlowsPageContent() {
                 <TableBody>
                   {filteredActions.map((action) => (
                     <TableRow key={action.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant="outline" 
+                            className={`text-xs ${action.color ? `border-${action.color}-500 text-${action.color}-700` : ''}`}
+                          >
+                            {action.category || 'general'}
+                          </Badge>
+                        </div>
+                      </TableCell>
                       <TableCell className="font-medium">{action.description}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{action.action_type}</Badge>
+                        <Badge variant="secondary" className="font-mono text-xs">
+                          {action.action_type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={action.is_active ? "default" : "secondary"}
+                          className={action.is_active ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}
+                        >
+                          {action.is_active ? 'Aktif' : 'Pasif'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {new Date(action.created_at).toLocaleDateString('tr-TR')}
@@ -734,7 +756,7 @@ function FlowsPageContent() {
                   ))}
                   {filteredActions.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                         {searchTerm ? 'Arama kriterine uygun action bulunamadı.' : 'Henüz action eklenmemiş.'}
                       </TableCell>
                     </TableRow>

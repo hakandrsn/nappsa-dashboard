@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { RecipeFormModal } from './RecipeFormModal'
 import { BulkRecipesModal } from './BulkRecipesModal'
 import { RecipeViewModal } from './RecipeViewModal'
+import { IngredientModal } from './IngredientModal'
 import { 
   ChefHat, 
   Utensils, 
@@ -51,6 +52,7 @@ function FoodsPageContent() {
   // Diğer modal state'leri
   const [isIngredientModalOpen, setIsIngredientModalOpen] = useState(false)
   const [editingIngredient, setEditingIngredient] = useState<FoodIngredient | null>(null)
+  const [viewingIngredient, setViewingIngredient] = useState<FoodIngredient | null>(null)
   
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<FoodCategory | null>(null)
@@ -88,6 +90,24 @@ function FoodsPageContent() {
   // Tab değiştiğinde
   const handleTabChange = (value: string) => {
     dispatch({ type: 'SET_ACTIVE_TAB', payload: value as any })
+  }
+
+  // Malzeme işlemleri
+  const handleViewIngredient = (ingredient: FoodIngredient) => {
+    setViewingIngredient(ingredient)
+    setIsIngredientModalOpen(true)
+  }
+
+  const handleEditIngredient = (ingredient: FoodIngredient) => {
+    setEditingIngredient(ingredient)
+    setViewingIngredient(null)
+    setIsIngredientModalOpen(true)
+  }
+
+  const handleCreateIngredient = () => {
+    setEditingIngredient(null)
+    setViewingIngredient(null)
+    setIsIngredientModalOpen(true)
   }
 
   // Daha fazla yükle butonları için handler'lar
@@ -128,10 +148,7 @@ function FoodsPageContent() {
     setEditingRecipe(null)
   }
 
-  const closeIngredientModal = () => {
-    setIsIngredientModalOpen(false)
-    setEditingIngredient(null)
-  }
+
 
   const closeCategoryModal = () => {
     setIsCategoryModalOpen(false)
@@ -354,12 +371,8 @@ function FoodsPageContent() {
               className="px-3 py-1 text-sm border rounded-md bg-background"
             >
               {availableLanguages.map(lang => (
-                <option key={lang} value={lang}>
-                  {lang === 'tr' ? 'Türkçe' : 
-                   lang === 'en' ? 'English' : 
-                   lang === 'de' ? 'Deutsch' : 
-                   lang === 'fr' ? 'Français' : 
-                   lang === 'es' ? 'Español' : lang}
+                                <option key={lang.code} value={lang.code}>
+                  {lang.name}
                 </option>
               ))}
             </select>
@@ -555,7 +568,7 @@ function FoodsPageContent() {
           <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
             <h2 className="text-2xl font-bold">Malzemeler</h2>
             <div className="flex gap-2">
-              <Button size="sm" onClick={() => handleEdit('ingredient', null)}>
+              <Button size="sm" onClick={handleCreateIngredient}>
                 <Plus className="h-4 w-4 mr-2" />
                 Tek Malzeme Ekle
               </Button>
@@ -592,7 +605,21 @@ function FoodsPageContent() {
                   </CardHeader>
                   <CardContent className="p-4 pt-0">
                     <div className="flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleViewIngredient(ingredient)}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Görüntüle
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="flex-1"
+                        onClick={() => handleEditIngredient(ingredient)}
+                      >
                         <Edit className="h-4 w-4 mr-2" />
                         Düzenle
                       </Button>
@@ -849,112 +876,17 @@ function FoodsPageContent() {
         onClose={() => setIsBulkRecipesModalOpen(false)}
       />
 
-      {/* Basit Modal'lar */}
       {/* Ingredient Modal */}
-      {isIngredientModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold">
-                {editingIngredient ? 'Malzeme Düzenle' : 'Yeni Malzeme Ekle'}
-              </h3>
-              <Button variant="ghost" size="sm" onClick={closeIngredientModal}>
-                ✕
-              </Button>
-            </div>
-            
-            <div className="space-y-6">
-              {/* Ana Bilgiler */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-lg">Ana Bilgiler</h4>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Kaynak ID</label>
-                    <input 
-                      type="text" 
-                      placeholder="Kaynak ID (opsiyonel)"
-                      className="w-full px-3 py-2 border rounded-md"
-                      defaultValue={editingIngredient?.source_id || ''}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Çeviriler */}
-              <div className="space-y-4">
-                <h4 className="font-medium text-lg">Çeviriler</h4>
-                
-                {/* Türkçe */}
-                <div className="space-y-3 p-4 border rounded-lg">
-                  <h5 className="font-medium text-sm text-blue-600">🇹🇷 Türkçe</h5>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Malzeme Adı *</label>
-                    <input 
-                      type="text" 
-                      placeholder="Malzeme adını girin"
-                      className="w-full px-3 py-2 border rounded-md"
-                      defaultValue={editingIngredient ? 
-                        state.ingredientTranslations[editingIngredient.id]?.find(t => t.language_code === 'tr')?.name || '' : ''
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Açıklama</label>
-                    <textarea 
-                      placeholder="Malzeme açıklaması"
-                      rows={3}
-                      className="w-full px-3 py-2 border rounded-md"
-                      defaultValue={editingIngredient ? 
-                        state.ingredientTranslations[editingIngredient.id]?.find(t => t.language_code === 'tr')?.description || '' : ''
-                      }
-                    />
-                  </div>
-                </div>
-
-                {/* İngilizce */}
-                <div className="space-y-3 p-4 border rounded-lg">
-                  <h5 className="font-medium text-sm text-blue-600">🇬🇧 English</h5>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Malzeme Adı *</label>
-                    <input 
-                      type="text" 
-                      placeholder="Ingredient name"
-                      className="w-full px-3 py-2 border rounded-md"
-                      defaultValue={editingIngredient ? 
-                        state.ingredientTranslations[editingIngredient.id]?.find(t => t.language_code === 'en')?.name || '' : ''
-                      }
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Açıklama</label>
-                    <textarea 
-                      placeholder="Ingredient description"
-                      rows={3}
-                      className="w-full px-3 py-2 border rounded-md"
-                      defaultValue={editingIngredient ? 
-                        state.ingredientTranslations[editingIngredient.id]?.find(t => t.language_code === 'en')?.description || '' : ''
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 justify-end mt-8 pt-6 border-t">
-              <Button variant="outline" onClick={closeIngredientModal}>
-                İptal
-              </Button>
-              <Button onClick={() => {
-                console.log('Malzeme kaydediliyor...')
-                closeIngredientModal()
-              }}>
-                {editingIngredient ? 'Güncelle' : 'Ekle'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <IngredientModal
+        isOpen={isIngredientModalOpen}
+        onClose={() => {
+          setIsIngredientModalOpen(false)
+          setEditingIngredient(null)
+          setViewingIngredient(null)
+        }}
+        editingIngredient={editingIngredient}
+        viewingIngredient={viewingIngredient}
+      />
 
       {/* Category Modal */}
       {isCategoryModalOpen && (

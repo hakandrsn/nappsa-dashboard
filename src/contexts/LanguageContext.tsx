@@ -1,9 +1,15 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
+interface Language {
+  code: string
+  name: string
+  flag: string
+}
+
 interface LanguageContextType {
   currentLanguage: string
   setLanguage: (language: string) => void
-  availableLanguages: string[]
+  availableLanguages: Language[]
 }
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined)
@@ -11,7 +17,13 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export function LanguageProvider({ children }: { children: ReactNode }) {
   const [currentLanguage, setCurrentLanguage] = useState<string>('tr')
   
-  const availableLanguages = ['tr', 'en', 'de', 'fr', 'es']
+  const availableLanguages: Language[] = [
+    { code: 'tr', name: 'Türkçe', flag: '🇹🇷' },
+    { code: 'en', name: 'English', flag: '🇬🇧' },
+    { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'es', name: 'Español', flag: '🇪🇸' }
+  ]
 
   const setLanguage = (language: string) => {
     setCurrentLanguage(language)
@@ -22,7 +34,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   // Sayfa yüklendiğinde localStorage'dan dil ayarını al
   useState(() => {
     const savedLanguage = localStorage.getItem('preferred-language')
-    if (savedLanguage && availableLanguages.includes(savedLanguage)) {
+    if (savedLanguage && availableLanguages.some(lang => lang.code === savedLanguage)) {
       setCurrentLanguage(savedLanguage)
     }
   })

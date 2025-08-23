@@ -190,25 +190,9 @@ export function AnswerFormModal({ isOpen, onClose, editingAnswer, questionId }: 
           description: "Cevap ve çeviriler başarıyla güncellendi.",
         })
       } else {
-        // Yeni oluşturma - önce ana cevabı oluştur
+        // Yeni oluşturma - createAnswer API'si zaten çevirileri ekliyor
         const { data, error } = await createAnswer(formData)
         if (error) throw error
-
-        // Sonra çevirileri ekle
-        for (const translation of formData.translations) {
-          const { error: translationError } = await supabase
-            .from('flow_answer_translations')
-            .insert({
-              answer_id: data.id,
-              language_code: translation.language_code,
-              text: translation.text
-            })
-          
-          if (translationError) {
-            console.error('Çeviri eklenirken hata:', translationError)
-            throw new Error(`Çeviri eklenirken hata: ${translationError.message}`)
-          }
-        }
 
         dispatch({ type: 'ADD_ANSWER', payload: data })
         toast({

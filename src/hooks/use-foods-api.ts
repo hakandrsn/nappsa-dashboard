@@ -47,11 +47,10 @@ export function useFoodsApi() {
           *,
           translations:food_recipe_translations(*)
         `, { count: 'exact' })
-        .eq('translations.language_code', currentLanguage) // Mevcut dildeki çevirileri getir
 
       // Filtreleri uygula
       if (filters?.search) {
-        // Mevcut dildeki çevirilerde arama yap
+        // Tüm dillerdeki çevirilerde arama yap, sonrasında JS'de filtrele
         query = query.or(`translations.title.ilike.%${filters.search}%,translations.description.ilike.%${filters.search}%`)
       }
       if (filters?.category_id) {
@@ -277,10 +276,10 @@ export function useFoodsApi() {
           *,
           translations:food_ingredient_translations(*)
         `, { count: 'exact' })
-        .eq('translations.language_code', currentLanguage) // Mevcut dildeki çevirileri getir
 
       // Filtreleri uygula
       if (filters?.search) {
+        // Tüm dillerdeki çevirilerde arama yap, sonrasında JS'de filtrele
         query = query.or(`translations.name.ilike.%${filters.search}%,translations.description.ilike.%${filters.search}%`)
       }
       if (filters?.category_id) {
@@ -502,7 +501,6 @@ export function useFoodsApi() {
           *,
           translations:food_category_translations(*)
         `, { count: 'exact' })
-        .eq('translations.language_code', currentLanguage) // Mevcut dildeki çevirileri getir
 
       // Filtreleri uygula
       if (filters?.search) {
@@ -717,7 +715,6 @@ export function useFoodsApi() {
           *,
           translations:food_cuisine_translations(*)
         `, { count: 'exact' })
-        .eq('translations.language_code', currentLanguage) // Mevcut dildeki çevirileri getir
 
       // Filtreleri uygula
       if (filters?.search) {
@@ -932,7 +929,6 @@ export function useFoodsApi() {
           *,
           translations:food_tag_translations(*)
         `, { count: 'exact' })
-        .eq('translations.language_code', currentLanguage) // Mevcut dildeki çevirileri getir
 
       // Filtreleri uygula
       if (filters?.search) {

@@ -31,7 +31,7 @@ export function ActionFormModal({ isOpen, onClose, editingAction }: ActionFormMo
 
   const [formData, setFormData] = useState<CreateActionData>({
     description: '',
-    action_type: '' as ActionType,
+    action_type: 'SHOW_CUSTOM_MESSAGE' as ActionType,
     parameters: {}
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -93,7 +93,7 @@ export function ActionFormModal({ isOpen, onClose, editingAction }: ActionFormMo
     }
   }
 
-  const handleParameterChange = (key: string, value: string) => {
+  const handleParameterChange = (key: string, value: string | boolean | number) => {
     setFormData(prev => ({
       ...prev,
       parameters: {
@@ -194,6 +194,120 @@ export function ActionFormModal({ isOpen, onClose, editingAction }: ActionFormMo
               value={formData.parameters.api_endpoint || ''}
               onChange={(e) => handleParameterChange('api_endpoint', e.target.value)}
               placeholder="/api/endpoint"
+            />
+          </div>
+        )
+
+      case 'FETCH_USER_PROFILE':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="include_avatar">Avatar Dahil Et</Label>
+            <Select
+              value={formData.parameters.include_avatar?.toString() || 'false'}
+              onValueChange={(value) => handleParameterChange('include_avatar', value === 'true')}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Evet</SelectItem>
+                <SelectItem value="false">Hayır</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )
+
+      case 'FETCH_WEATHER':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="city">Şehir</Label>
+            <Input
+              id="city"
+              value={formData.parameters.city || ''}
+              onChange={(e) => handleParameterChange('city', e.target.value)}
+              placeholder="Istanbul"
+            />
+            <Label htmlFor="units">Birim</Label>
+            <Select
+              value={formData.parameters.units || 'metric'}
+              onValueChange={(value) => handleParameterChange('units', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="metric">Celsius</SelectItem>
+                <SelectItem value="imperial">Fahrenheit</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )
+
+      case 'FETCH_NEWS':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="category">Kategori</Label>
+            <Input
+              id="category"
+              value={formData.parameters.category || ''}
+              onChange={(e) => handleParameterChange('category', e.target.value)}
+              placeholder="technology"
+            />
+            <Label htmlFor="limit">Limit</Label>
+            <Input
+              id="limit"
+              type="number"
+              value={formData.parameters.limit || 5}
+              onChange={(e) => handleParameterChange('limit', parseInt(e.target.value))}
+              placeholder="5"
+            />
+          </div>
+        )
+
+      case 'FETCH_MUSIC_RECOMMENDATION':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="genre">Müzik Türü</Label>
+            <Input
+              id="genre"
+              value={formData.parameters.genre || ''}
+              onChange={(e) => handleParameterChange('genre', e.target.value)}
+              placeholder="pop"
+            />
+            <Label htmlFor="mood">Ruh Hali</Label>
+            <Input
+              id="mood"
+              value={formData.parameters.mood || ''}
+              onChange={(e) => handleParameterChange('mood', e.target.value)}
+              placeholder="happy"
+            />
+          </div>
+        )
+
+      case 'FETCH_EXERCISE_SUGGESTION':
+        return (
+          <div className="space-y-2">
+            <Label htmlFor="difficulty">Zorluk</Label>
+            <Select
+              value={formData.parameters.difficulty || 'beginner'}
+              onValueChange={(value) => handleParameterChange('difficulty', value)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="beginner">Başlangıç</SelectItem>
+                <SelectItem value="intermediate">Orta</SelectItem>
+                <SelectItem value="advanced">İleri</SelectItem>
+              </SelectContent>
+            </Select>
+            <Label htmlFor="duration">Süre (dakika)</Label>
+            <Input
+              id="duration"
+              type="number"
+              value={formData.parameters.duration || 30}
+              onChange={(e) => handleParameterChange('duration', parseInt(e.target.value))}
+              placeholder="30"
             />
           </div>
         )

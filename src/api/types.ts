@@ -372,6 +372,11 @@ export interface FlowAction {
   description: string
   action_type: string
   parameters: Record<string, any>
+  is_active?: boolean
+  priority?: number
+  category?: string
+  icon?: string
+  color?: string
   created_at: string
 }
 
@@ -413,6 +418,11 @@ export const ACTION_TYPES = {
   REDIRECT_TO_URL: 'REDIRECT_TO_URL',
   OPEN_MODAL: 'OPEN_MODAL',
   CALL_API_ENDPOINT: 'CALL_API_ENDPOINT',
+  FETCH_USER_PROFILE: 'FETCH_USER_PROFILE',
+  FETCH_WEATHER: 'FETCH_WEATHER',
+  FETCH_NEWS: 'FETCH_NEWS',
+  FETCH_MUSIC_RECOMMENDATION: 'FETCH_MUSIC_RECOMMENDATION',
+  FETCH_EXERCISE_SUGGESTION: 'FETCH_EXERCISE_SUGGESTION',
 } as const
 
 export type ActionType = typeof ACTION_TYPES[keyof typeof ACTION_TYPES]

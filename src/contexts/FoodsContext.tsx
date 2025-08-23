@@ -405,7 +405,7 @@ function foodsReducer(state: FoodsState, action: FoodsAction): FoodsState {
       return {
         ...state,
         ingredients: state.ingredients.map(ingredient => 
-          ingredient.id === action.payload.id ? action.payload : ingredient
+          ingredient.id === action.payload?.id ? action.payload : ingredient
         )
       }
     
@@ -458,7 +458,7 @@ function foodsReducer(state: FoodsState, action: FoodsAction): FoodsState {
       return {
         ...state,
         categories: state.categories.map(category => 
-          category.id === action.payload.id ? action.payload : category
+          category.id === action.payload?.id ? action.payload : category
         )
       }
     
@@ -511,7 +511,7 @@ function foodsReducer(state: FoodsState, action: FoodsAction): FoodsState {
       return {
         ...state,
         cuisines: state.cuisines.map(cuisine => 
-          cuisine.id === action.payload.id ? action.payload : cuisine
+          cuisine.id === action.payload?.id ? action.payload : cuisine
         )
       }
     
@@ -564,7 +564,7 @@ function foodsReducer(state: FoodsState, action: FoodsAction): FoodsState {
       return {
         ...state,
         tags: state.tags.map(tag => 
-          tag.id === action.payload.id ? action.payload : tag
+          tag.id === action.payload?.id ? action.payload : tag
         )
       }
     

@@ -338,12 +338,8 @@ export function BulkRecipesModal({ isOpen, onClose }: BulkRecipesModalProps) {
               className="px-3 py-1 text-sm border rounded-md bg-background"
             >
               {availableLanguages.map(lang => (
-                <option key={lang} value={lang}>
-                  {lang === 'tr' ? '🇹🇷 Türkçe' :
-                   lang === 'en' ? '🇬🇧 English' :
-                   lang === 'de' ? '🇩🇪 Deutsch' :
-                   lang === 'fr' ? '🇫🇷 Français' :
-                   lang === 'es' ? '🇪🇸 Español' : lang}
+                <option key={lang.code} value={lang.code}>
+                  {lang.flag} {lang.name}
                 </option>
               ))}
             </select>
