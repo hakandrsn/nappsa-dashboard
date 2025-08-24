@@ -8,6 +8,7 @@ import {
   Home,
   Settings,
   GitBranch,
+  Activity,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -52,6 +53,12 @@ const data = {
       title: "Flow",
       url: "/dashboard/flows",
       icon: GitBranch,
+      isActive: false,
+    },
+    {
+      title: "Aktiviteler",
+      url: "/dashboard/activities",
+      icon: Activity,
       isActive: false,
     },
     {

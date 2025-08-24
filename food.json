@@ -1,0 +1,71 @@
+[
+  {
+    "title": "Yaki Udon",
+    "description": "A delicious Japanese stir-fried udon noodle dish with vegetables and mushrooms",
+    "instructions": [
+      "Boil some water in a large saucepan. Add 250ml cold water and the udon noodles. (As they are so thick, adding cold water helps them to cook a little bit slower so the middle cooks through). If using frozen or fresh noodles, cook for 2 mins or until al dente; dried will take longer, about 5-6 mins. Drain and leave in the colander.",
+      "Heat 1 tbsp of the oil, add the onion and cabbage and sauté for 5 mins until softened. Add the mushrooms and some spring onions, and sauté for 1 more min.",
+      "Pour in the remaining sesame oil and the noodles. If using cold noodles, let them heat through before adding the ingredients for the sauce – otherwise tip in straight away and keep stir-frying until sticky and piping hot. Sprinkle with the remaining spring onions."
+    ],
+    "image_url": "https://www.themealdb.com/images/media/meals/wrustq1511475474.jpg",
+    "prep_time_minutes": 15,
+    "cook_time_minutes": 20,
+    "servings": 2,
+    "difficulty": "Medium",
+    "ingredients": [
+      {
+        "name": "Udon Noodles",
+        "quantity": "250",
+        "unit": "g"
+      },
+      {
+        "name": "Sesame Seed Oil",
+        "quantity": "2",
+        "unit": "tbs"
+      },
+      {
+        "name": "Onions",
+        "quantity": "1",
+        "unit": "sliced"
+      },
+      {
+        "name": "Cabbage",
+        "quantity": "0.25",
+        "unit": "head"
+      },
+      {
+        "name": "Shiitake Mushrooms",
+        "quantity": "10",
+        "unit": "pieces"
+      },
+      {
+        "name": "Spring Onions",
+        "quantity": "4",
+        "unit": "pieces"
+      },
+      {
+        "name": "Mirin",
+        "quantity": "4",
+        "unit": "tbsp"
+      },
+      {
+        "name": "Soy Sauce",
+        "quantity": "2",
+        "unit": "tbs"
+      },
+      {
+        "name": "Caster Sugar",
+        "quantity": "1",
+        "unit": "tblsp"
+      },
+      {
+        "name": "Worcestershire Sauce",
+        "quantity": "1",
+        "unit": "tblsp"
+      }
+    ],
+    "categories": ["Vegetarian"],
+    "cuisines": ["Japanese"],
+    "tags": ["Low Calorie"]
+  }
+]

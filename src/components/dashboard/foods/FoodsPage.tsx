@@ -69,7 +69,7 @@ function FoodsPageContent() {
       try {
         await Promise.all([
           fetchRecipes({ page: 1, limit: 50 }),
-          fetchIngredients({ page: 1, limit: 50 }),
+          fetchIngredients({ page: 1, limit: 1000 }), // Tüm malzemeleri yükle
           fetchCategories({ page: 1, limit: 50 }),
           fetchCuisines({ page: 1, limit: 50 }),
           fetchTags({ page: 1, limit: 50 })
@@ -211,6 +211,8 @@ function FoodsPageContent() {
         cuisines: cuisines.length
       })
 
+
+
       // State'e junction table verilerini ekle
       dispatch({ 
         type: 'SET_RECIPE_INGREDIENTS', 
@@ -226,6 +228,15 @@ function FoodsPageContent() {
         type: 'SET_RECIPE_CUISINES', 
         payload: { recipeId: recipe.id, cuisines } 
       })
+
+      // Instructions state'ini de güncelle (tarif adımları için)
+      const recipeTranslations = state.recipeTranslations[recipe.id] || []
+      if (recipeTranslations.length > 0) {
+        dispatch({
+          type: 'SET_RECIPE_TRANSLATIONS',
+          payload: { recipeId: recipe.id, translations: recipeTranslations }
+        })
+      }
 
       setViewingRecipe(recipe)
       setIsViewRecipeModalOpen(true)
@@ -834,10 +845,17 @@ function FoodsPageContent() {
           translations={state.recipeTranslations[viewingRecipe.id] || []}
           ingredients={state.recipeIngredients[viewingRecipe.id]?.map(ri => {
             const ingredient = state.ingredients.find(i => i.id === ri.ingredient_id)
-            if (!ingredient) return null
+            
+            if (!ingredient) {
+              return null
+            }
+            
+            // Malzeme çevirilerini bul
+            const ingredientTranslations = state.ingredientTranslations[ingredient.id] || []
+            const ingredientName = ingredientTranslations.find(t => t.language_code === currentLanguage)?.name || ingredient.source_id || `Ingredient ${ingredient.id}`
             
             return {
-              ingredient: ingredient,
+              ingredient: { ...ingredient, name: ingredientName },
               quantity: ri.quantity,
               unit: ri.unit,
               notes: undefined

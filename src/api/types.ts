@@ -439,3 +439,105 @@ export interface ActionParameters {
   genre_slug?: string
   [key: string]: any
 }
+
+// =============================================
+// ACTIVITIES SİSTEMİ TİPLERİ
+// =============================================
+
+// Activity Categories (Aktivite Kategorileri)
+export interface ActivityCategory {
+  id: number;
+  parent_id?: number;
+  slug: string;
+  created_at: string;
+}
+
+// Activity Category Translations (Kategori Çevirileri)
+export interface ActivityCategoryTranslation {
+  id: number;
+  category_id: number;
+  language_code: string;
+  name: string;
+}
+
+// Activities (Aktiviteler)
+export interface Activity {
+  id: number;
+  created_at: string;
+}
+
+// Activity Translations (Aktivite Çevirileri)
+export interface ActivityTranslation {
+  id: number;
+  activity_id: number;
+  language_code: string;
+  title: string;
+  description: string;
+}
+
+// Activity Category Links (Aktivite-Kategori Bağlantıları)
+export interface ActivityCategoryLink {
+  activity_id: number;
+  category_id: number;
+}
+
+// =============================================
+// CREATE/UPDATE TİPLERİ
+// =============================================
+
+// Activity Category Create/Update
+export interface CreateActivityCategory {
+  parent_id?: number;
+  slug: string;
+  translations: { language_code: 'tr' | 'en'; name: string }[];
+}
+
+export interface UpdateActivityCategory {
+  parent_id?: number;
+  slug?: string;
+  translations?: { language_code: 'tr' | 'en'; name: string }[];
+}
+
+// Activity Create/Update
+export interface CreateActivity {
+  translations: { language_code: 'tr' | 'en'; title: string; description: string }[];
+  category_ids: number[];
+}
+
+export interface UpdateActivity {
+  translations?: { language_code: 'tr' | 'en'; title: string; description: string }[];
+  category_ids?: number[];
+}
+
+// =============================================
+// DETAYLI TİPLER
+// =============================================
+
+// Activity with Details
+export interface ActivityWithDetails extends Activity {
+  translations: ActivityTranslation[];
+  categories: ActivityCategory[];
+}
+
+// Activity Category with Details
+export interface ActivityCategoryWithDetails extends ActivityCategory {
+  translations: ActivityCategoryTranslation[];
+  children?: ActivityCategoryWithDetails[];
+  activities?: ActivityWithDetails[];
+}
+
+// =============================================
+// FILTER TİPLERİ
+// =============================================
+
+export interface ActivityFilters {
+  search: string;
+  category_id: string;
+  language: string;
+}
+
+export interface ActivityCategoryFilters {
+  search: string;
+  parent_id: string;
+  language: string;
+}

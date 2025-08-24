@@ -627,7 +627,7 @@ export function cleanBulkRecipeData(data: any, languageCode: string): {
     translations,
     // Junction table data
     categories: data.categories || [],
-    cuisines: data.cuisines || [],
+    cuisines: data.cuisines || data.cuisine ? [data.cuisine] : [],
     tags: data.tags || [],
     ingredients: data.ingredients || []
   }
