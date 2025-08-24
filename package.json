@@ -2,6 +2,25 @@
   "name": "nappsa-dashboard",
   "private": true,
   "type": "module",
+  "version": "1.0.0",
+  "description": "Nappsa Dashboard",
+  "author": "Nappsa",
+  "license": "MIT",
+  "homepage": "https://nappsa.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nappsa/nappsa-dashboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nappsa/nappsa-dashboard/issues"
+  },
+  "keywords": [
+    "nappsa",
+    "dashboard",
+    "react",
+    "tailwind",
+    "typescript"
+  ],
   "scripts": {
     "dev": "vite --port 3000",
     "start": "vite --port 3000",
