@@ -629,6 +629,11 @@ function FlowsPageContent() {
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 ID: {answer.id} | Soru ID: {answer.question_id}
+                                {answer.parameters && Object.keys(answer.parameters).length > 0 && (
+                                  <span className="ml-2">
+                                    | Parametreler: {JSON.stringify(answer.parameters)}
+                                  </span>
+                                )}
                               </div>
                             </div>
                             <div className="flex items-center gap-2">

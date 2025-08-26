@@ -358,6 +358,7 @@ export interface FlowAnswer {
   question_id: number
   next_question_id?: number
   action_id?: number
+  parameters?: Record<string, any> // JSONB parameters sütunu
   created_at: string
 }
 
@@ -399,6 +400,7 @@ export interface CreateAnswerData {
   question_id: number
   next_question_id?: number
   action_id?: number
+  parameters?: Record<string, any> // JSONB parameters sütunu
   translations: { language_code: 'tr' | 'en'; text: string }[] // Dil seçeneği zorunlu
 }
 

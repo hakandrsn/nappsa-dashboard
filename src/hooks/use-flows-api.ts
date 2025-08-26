@@ -130,7 +130,8 @@ export function useFlowsApi() {
         .insert({
           question_id: answerData.question_id,
           next_question_id: answerData.next_question_id,
-          action_id: answerData.action_id
+          action_id: answerData.action_id,
+          parameters: answerData.parameters || {}
         })
         .select()
         .single()

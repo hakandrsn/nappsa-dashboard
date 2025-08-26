@@ -37,11 +37,13 @@ export function AnswerFormModal({ isOpen, onClose, editingAnswer, questionId }: 
     question_id: questionId,
     next_question_id: undefined,
     action_id: undefined,
+    parameters: {},
     translations: [
       { language_code: 'tr', text: '' },
       { language_code: 'en', text: '' }
     ]
   })
+  const [parametersText, setParametersText] = useState('{}')
   const [selectedType, setSelectedType] = useState<'question' | 'action'>('question')
   const [isLoading, setIsLoading] = useState(false)
 
@@ -55,16 +57,19 @@ export function AnswerFormModal({ isOpen, onClose, editingAnswer, questionId }: 
         question_id: questionId,
         next_question_id: editingAnswer.next_question_id || undefined,
         action_id: editingAnswer.action_id || undefined,
+        parameters: editingAnswer.parameters || {},
         translations: [
           { language_code: 'tr', text: '' },
           { language_code: 'en', text: '' }
         ]
       })
+      setParametersText(JSON.stringify(editingAnswer.parameters || {}, null, 2))
     } else {
       setFormData({
         question_id: questionId,
         next_question_id: undefined,
         action_id: undefined,
+        parameters: {},
         translations: [
           { language_code: 'tr', text: '' },
           { language_code: 'en', text: '' }
@@ -146,12 +151,28 @@ export function AnswerFormModal({ isOpen, onClose, editingAnswer, questionId }: 
     }
 
     try {
+      // Parameters'ı parse et
+      let parsedParameters = {}
+      try {
+        if (parametersText.trim() !== '') {
+          parsedParameters = JSON.parse(parametersText)
+        }
+      } catch (error) {
+        toast({
+          title: "Hata",
+          description: "Parameters JSON formatı geçersiz. Lütfen geçerli JSON girin.",
+          variant: "destructive",
+        })
+        return
+      }
+
       if (editingAnswer) {
         // Güncelleme - önce ana cevabı güncelle
         const { data, error } = await updateAnswer(editingAnswer.id, {
           question_id: formData.question_id,
           next_question_id: formData.next_question_id,
-          action_id: formData.action_id
+          action_id: formData.action_id,
+          parameters: parsedParameters
         })
         if (error) throw error
 
@@ -191,7 +212,10 @@ export function AnswerFormModal({ isOpen, onClose, editingAnswer, questionId }: 
         })
       } else {
         // Yeni oluşturma - createAnswer API'si zaten çevirileri ekliyor
-        const { data, error } = await createAnswer(formData)
+        const { data, error } = await createAnswer({
+          ...formData,
+          parameters: parsedParameters
+        })
         if (error) throw error
 
         dispatch({ type: 'ADD_ANSWER', payload: data })
@@ -332,6 +356,39 @@ export function AnswerFormModal({ isOpen, onClose, editingAnswer, questionId }: 
               </Select>
             </div>
           )}
+
+          {/* Parameters */}
+          <div className="space-y-2">
+            <Label htmlFor="parameters">Parametreler (JSON)</Label>
+            <Textarea
+              id="parameters"
+              value={parametersText}
+              onChange={(e) => {
+                const value = e.target.value
+                setParametersText(value)
+                
+                try {
+                  if (value.trim() === '') {
+                    setFormData(prev => ({ ...prev, parameters: {} }))
+                  } else {
+                    const parsed = JSON.parse(value)
+                    setFormData(prev => ({ ...prev, parameters: parsed }))
+                  }
+                } catch (error) {
+                  // JSON parse hatası durumunda parameters'ı undefined yap
+                  // Form submit edilirken tekrar parse edilmeye çalışılacak
+                }
+              }}
+              placeholder={`{"key": "value", "example": "data"}`}
+              rows={4}
+              className="font-mono text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Bu cevap seçildiğinde üretilecek anahtar-değer çiftlerini JSON formatında girin.
+              <br />
+              Örnek: {'{"location": "at-home", "time": "evening"}'}
+            </p>
+          </div>
 
           {/* Çeviriler */}
           {formData.translations.map((translation) => (
